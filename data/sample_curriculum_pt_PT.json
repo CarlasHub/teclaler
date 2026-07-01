@@ -1,0 +1,47 @@
+{
+  "id": "pt-PT-mvp-001",
+  "locale": "pt-PT",
+  "version": "0.1.0",
+  "title": "Primeiras Palavras",
+  "items": [
+    {
+      "id": "word-casa-pt-pt",
+      "type": "word",
+      "locale": "pt-PT",
+      "text": "casa",
+      "displayText": "CASA",
+      "syllables": [
+        "ca",
+        "sa"
+      ],
+      "graphemes": [
+        "c",
+        "a",
+        "s",
+        "a"
+      ],
+      "targetSequence": [
+        "c",
+        "a",
+        "s",
+        "a"
+      ],
+      "audio": {
+        "letters": [
+          "pt-PT.letter.c",
+          "pt-PT.letter.a",
+          "pt-PT.letter.s",
+          "pt-PT.letter.a"
+        ],
+        "syllables": [
+          "pt-PT.syllable.ca",
+          "pt-PT.syllable.sa"
+        ],
+        "word": "pt-PT.word.casa"
+      },
+      "imageId": "image.house.simple",
+      "difficulty": 1,
+      "status": "draft"
+    }
+  ]
+}

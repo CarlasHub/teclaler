@@ -1,0 +1,88 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { OnScreenKeyboard } from "../components/OnScreenKeyboard";
+
+describe("on-screen Portuguese keyboard", () => {
+  it("wires every base keyboard button including space and backspace", async () => {
+    const user = userEvent.setup();
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard currentKey="m" onKeyPress={onKeyPress} />);
+
+    const expectedButtons = [
+      ["Tecla Q", "q"],
+      ["Tecla W", "w"],
+      ["Tecla E", "e"],
+      ["Tecla R", "r"],
+      ["Tecla T", "t"],
+      ["Tecla Y", "y"],
+      ["Tecla U", "u"],
+      ["Tecla I", "i"],
+      ["Tecla O", "o"],
+      ["Tecla P", "p"],
+      ["Tecla A", "a"],
+      ["Tecla S", "s"],
+      ["Tecla D", "d"],
+      ["Tecla F", "f"],
+      ["Tecla G", "g"],
+      ["Tecla H", "h"],
+      ["Tecla J", "j"],
+      ["Tecla K", "k"],
+      ["Tecla L", "l"],
+      ["Tecla Ç", "ç"],
+      ["Tecla Z", "z"],
+      ["Tecla X", "x"],
+      ["Tecla C", "c"],
+      ["Tecla V", "v"],
+      ["Tecla B", "b"],
+      ["Tecla N", "n"],
+      ["Tecla M", "m"],
+      ["Espaço", " "],
+      ["Apagar", "backspace"],
+    ] as const;
+
+    for (const [name] of expectedButtons) {
+      await user.click(screen.getByRole("button", { name }));
+    }
+
+    expect(onKeyPress.mock.calls.map(([value]) => value)).toEqual(
+      expectedButtons.map(([, value]) => value),
+    );
+  });
+
+  it("emits canonical ç from the touch keyboard and highlights the current key", async () => {
+    const user = userEvent.setup();
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard currentKey="ç" onKeyPress={onKeyPress} />);
+
+    const cCedilha = screen.getByRole("button", { name: "Tecla Ç" });
+    expect(cCedilha).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(cCedilha);
+
+    expect(onKeyPress).toHaveBeenCalledWith("ç");
+  });
+
+  it("shows accent keys only when the lesson needs them", async () => {
+    const user = userEvent.setup();
+    const onKeyPress = vi.fn();
+    const { rerender } = render(
+      <OnScreenKeyboard currentKey="ã" onKeyPress={onKeyPress} />,
+    );
+
+    expect(screen.queryByRole("button", { name: "Tecla Ã" })).toBeNull();
+
+    rerender(
+      <OnScreenKeyboard currentKey="ã" onKeyPress={onKeyPress} showAccentRow />,
+    );
+
+    const aTilde = screen.getByRole("button", { name: "Tecla Ã" });
+    expect(aTilde).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(aTilde);
+
+    expect(onKeyPress).toHaveBeenCalledWith("ã");
+  });
+});

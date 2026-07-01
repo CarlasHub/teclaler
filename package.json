@@ -1,0 +1,34 @@
+{
+  "name": "teclaler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "validate:content": "tsx scripts/validateContent.ts",
+    "format": "prettier --write \"index.html\" \"package.json\" \"tsconfig*.json\" \"vite.config.ts\" \"vitest.setup.ts\" \"scripts/**/*.ts\" \"src/**/*.{ts,tsx,css}\" \"public/**/*.{json,js}\" \"README.md\"",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^6.0.3",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.2",
+    "tsx": "^4.22.4",
+    "typescript": "^5.7.2",
+    "vite": "^8.1.2",
+    "vitest": "^4.1.9"
+  }
+}

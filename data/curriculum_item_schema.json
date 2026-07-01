@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TeclaLer Curriculum Item",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "locale",
+    "text",
+    "displayText",
+    "targetSequence",
+    "audio",
+    "difficulty",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "letter",
+        "syllable",
+        "word",
+        "sentence"
+      ]
+    },
+    "locale": {
+      "enum": [
+        "pt-PT",
+        "pt-BR"
+      ]
+    },
+    "text": {
+      "type": "string"
+    },
+    "displayText": {
+      "type": "string"
+    },
+    "syllables": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "graphemes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "targetSequence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "audio": {
+      "type": "object"
+    },
+    "difficulty": {
+      "type": "integer"
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "pedagogy_review",
+        "pronunciation_review",
+        "ready_for_dev",
+        "ready_for_release",
+        "released",
+        "retired"
+      ]
+    }
+  }
+}

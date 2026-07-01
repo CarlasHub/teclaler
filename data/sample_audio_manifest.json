@@ -1,0 +1,55 @@
+{
+  "id": "pt-PT-audio-v1",
+  "locale": "pt-PT",
+  "version": "0.1.0",
+  "assets": [
+    {
+      "id": "pt-PT.letter.c",
+      "locale": "pt-PT",
+      "kind": "letter",
+      "text": "cê",
+      "path": "/audio/pt-PT/letters/c.mp3",
+      "reviewStatus": "needs_review"
+    },
+    {
+      "id": "pt-PT.letter.a",
+      "locale": "pt-PT",
+      "kind": "letter",
+      "text": "a",
+      "path": "/audio/pt-PT/letters/a.mp3",
+      "reviewStatus": "needs_review"
+    },
+    {
+      "id": "pt-PT.letter.s",
+      "locale": "pt-PT",
+      "kind": "letter",
+      "text": "esse",
+      "path": "/audio/pt-PT/letters/s.mp3",
+      "reviewStatus": "needs_review"
+    },
+    {
+      "id": "pt-PT.syllable.ca",
+      "locale": "pt-PT",
+      "kind": "syllable",
+      "text": "ca",
+      "path": "/audio/pt-PT/syllables/ca.mp3",
+      "reviewStatus": "needs_review"
+    },
+    {
+      "id": "pt-PT.syllable.sa",
+      "locale": "pt-PT",
+      "kind": "syllable",
+      "text": "sa",
+      "path": "/audio/pt-PT/syllables/sa.mp3",
+      "reviewStatus": "needs_review"
+    },
+    {
+      "id": "pt-PT.word.casa",
+      "locale": "pt-PT",
+      "kind": "word",
+      "text": "casa",
+      "path": "/audio/pt-PT/words/casa.mp3",
+      "reviewStatus": "needs_review"
+    }
+  ]
+}
