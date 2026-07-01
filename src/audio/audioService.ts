@@ -1,5 +1,6 @@
 import { resolveAudioAsset } from "./audioManifest";
 import { prepareDevelopmentTts, speakWithDevelopmentTts } from "./ttsFallback";
+import { resolvePublicAssetPath } from "../platform/publicPath";
 import type {
   AudioManifest,
   AudioManifestAsset,
@@ -198,12 +199,14 @@ function hasLocalAudioElementSupport(): boolean {
 }
 
 function createLocalAudioElement(path: string): HTMLAudioElement {
+  const assetPath = resolvePublicAssetPath(path);
+
   if (typeof Audio !== "undefined") {
-    return new Audio(path);
+    return new Audio(assetPath);
   }
 
   const audio = document.createElement("audio");
-  audio.src = path;
+  audio.src = assetPath;
   return audio;
 }
 

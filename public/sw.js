@@ -1,4 +1,6 @@
-const CACHE_NAME = "teclaler-app-shell-v3";
+const CACHE_NAME = "teclaler-app-shell-v4";
+const scopePath = new URL(self.registration.scope).pathname.replace(/\/$/u, "");
+const withScope = (path) => `${scopePath}${path === "/" ? "/" : path}`;
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -9,7 +11,7 @@ const APP_SHELL = [
   "/images/duck-simple.svg",
   "/images/toad-simple.svg",
   "/images/ball-simple.svg",
-];
+].map(withScope);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

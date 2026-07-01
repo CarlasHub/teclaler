@@ -1,3 +1,5 @@
+import { getPublicBasePath, resolvePublicAssetPath } from "./publicPath";
+
 export function registerServiceWorker(): void {
   if (!("serviceWorker" in navigator)) {
     return;
@@ -9,7 +11,9 @@ export function registerServiceWorker(): void {
   }
 
   window.addEventListener("load", () => {
-    void navigator.serviceWorker.register("/sw.js");
+    void navigator.serviceWorker.register(resolvePublicAssetPath("/sw.js"), {
+      scope: getPublicBasePath(),
+    });
   });
 }
 

@@ -2,15 +2,15 @@
   "name": "TeclaLer",
   "short_name": "TeclaLer",
   "description": "Ouve. Lê. Escreve.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f7fbff",
   "theme_color": "#f7fbff",
   "lang": "pt-PT",
   "icons": [
     {
-      "src": "/images/icon.svg",
+      "src": "images/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

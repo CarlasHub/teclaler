@@ -8,6 +8,7 @@ import {
 import type { CurriculumItem, LessonLocale } from "../../curriculum/types";
 import { containsAccentKey, displayKey } from "../../engine/inputEngine";
 import type { LessonState } from "../../engine/lessonEngine";
+import { resolvePublicAssetPath } from "../../platform/publicPath";
 import { OnScreenKeyboard } from "../OnScreenKeyboard";
 
 interface LessonScreenProps {
@@ -84,7 +85,9 @@ export function LessonScreen({
     localCompletionCount === 1
       ? copy.oneCompletion
       : copy.completions(localCompletionCount);
-  const imageSrc = item.imageAsset ?? null;
+  const imageSrc = item.imageAsset
+    ? resolvePublicAssetPath(item.imageAsset)
+    : null;
   const imageAlt = item.imageAlt ?? "";
 
   useEffect(() => {
