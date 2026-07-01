@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" role="img" aria-labelledby="title desc">
+  <title id="title">Sapo</title>
+  <desc id="desc">Um sapo simples sentado numa folha.</desc>
+  <rect width="360" height="280" rx="36" fill="#f1fbf4"/>
+  <ellipse cx="180" cy="232" rx="124" ry="24" fill="#a7d182"/>
+  <ellipse cx="180" cy="169" rx="82" ry="57" fill="#5eb36b" stroke="#2f6f4b" stroke-width="6"/>
+  <circle cx="130" cy="115" r="30" fill="#6fc37a" stroke="#2f6f4b" stroke-width="6"/>
+  <circle cx="230" cy="115" r="30" fill="#6fc37a" stroke="#2f6f4b" stroke-width="6"/>
+  <circle cx="130" cy="112" r="10" fill="#ffffff"/>
+  <circle cx="230" cy="112" r="10" fill="#ffffff"/>
+  <circle cx="133" cy="114" r="5" fill="#24334d"/>
+  <circle cx="227" cy="114" r="5" fill="#24334d"/>
+  <path d="M151 171C166 185 194 185 209 171" fill="none" stroke="#244d38" stroke-width="7" stroke-linecap="round"/>
+  <path d="M115 202C91 206 78 221 70 238" fill="none" stroke="#2f6f4b" stroke-width="12" stroke-linecap="round"/>
+  <path d="M245 202C269 206 282 221 290 238" fill="none" stroke="#2f6f4b" stroke-width="12" stroke-linecap="round"/>
+</svg>

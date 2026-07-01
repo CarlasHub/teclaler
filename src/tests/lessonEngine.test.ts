@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { casaItem, ptPTStarterPack } from "../curriculum/ptPTPack";
 import {
   createLessonState,
+  getLessonReplayTarget,
   processLessonBackspace,
   processLessonInput,
 } from "../engine/lessonEngine";
@@ -85,6 +86,59 @@ describe("lesson engine", () => {
       type: "WORD_COMPLETED",
       itemId: "word-mala-pt-pt",
       audioId: "pt-PT.word.mala",
+    });
+  });
+
+  it("resolves replay audio targets from typed lesson progress", () => {
+    let state = createLessonState(casaItem);
+
+    expect(getLessonReplayTarget(casaItem, state)).toEqual({
+      disabled: true,
+      displayText: "",
+      text: "",
+    });
+
+    state = processLessonInput(casaItem, state, "c").state;
+    expect(getLessonReplayTarget(casaItem, state)).toEqual({
+      audioId: "pt-PT.letter.c",
+      disabled: false,
+      displayText: "C",
+      kind: "letter",
+      text: "c",
+    });
+
+    state = processLessonInput(casaItem, state, "a").state;
+    expect(getLessonReplayTarget(casaItem, state)).toEqual({
+      audioId: "pt-PT.syllable.ca",
+      disabled: false,
+      displayText: "CA",
+      kind: "syllable",
+      text: "ca",
+    });
+
+    state = processLessonInput(casaItem, state, "s").state;
+    expect(getLessonReplayTarget(casaItem, state)).toEqual({
+      disabled: false,
+      displayText: "CAS",
+      kind: "partial",
+      text: "cas",
+    });
+
+    state = processLessonInput(casaItem, state, "a").state;
+    expect(getLessonReplayTarget(casaItem, state)).toEqual({
+      audioId: "pt-PT.word.casa",
+      disabled: false,
+      displayText: "CASA",
+      kind: "word",
+      text: "casa",
+    });
+
+    state = processLessonBackspace(casaItem, state).state;
+    expect(getLessonReplayTarget(casaItem, state)).toEqual({
+      disabled: false,
+      displayText: "CAS",
+      kind: "partial",
+      text: "cas",
     });
   });
 });

@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { ptPTAudioManifest } from "../audio/manifest";
+import {
+  audioManifestsByLocale,
+  enGBAudioManifest,
+  ptBRAudioManifest,
+  ptPTAudioManifest,
+} from "../audio/manifest";
 import type { AudioManifest } from "../audio/types";
 import { validateAudioManifest } from "../audio/validators";
+import { resolveAudioAsset } from "../audio/audioManifest";
+import {
+  curriculumPacksByLocale,
+  supportedLessonLocales,
+  ptBRStarterPack,
+  supportedPortugueseLocales,
+} from "../curriculum/portuguesePacks";
+import { enGBStarterPack } from "../curriculum/enGBPack";
 import { ptPTStarterPack } from "../curriculum/ptPTPack";
 import { starterLesson } from "../curriculum/starterLesson";
 import type { CurriculumPack } from "../curriculum/types";
@@ -13,6 +26,7 @@ import { normalizePhysicalKey } from "../engine/inputEngine";
 import { createLessonState, processLessonInput } from "../engine/lessonEngine";
 
 const EXPECTED_STARTER_WORDS = ["casa", "mala", "pato", "sapo", "bola"];
+const EXPECTED_ENGLISH_STARTER_WORDS = ["house", "bag", "duck", "toad", "ball"];
 
 describe("pt-PT starter curriculum", () => {
   it("loads the five content-driven starter words in order", () => {
@@ -24,6 +38,60 @@ describe("pt-PT starter curriculum", () => {
     expect(ptPTStarterPack.items.map((item) => item.text)).toEqual(
       EXPECTED_STARTER_WORDS,
     );
+    expect(ptPTStarterPack.items.map((item) => item.imageAsset)).toEqual(
+      starterLesson.words.map((word) => word.imageAsset),
+    );
+    expect(ptPTStarterPack.items.every((item) => item.imageAlt?.trim())).toBe(
+      true,
+    );
+  });
+
+  it("provides separate lesson packs without mixing locale audio IDs", () => {
+    expect(supportedPortugueseLocales).toEqual(["pt-PT", "pt-BR"]);
+    expect(supportedLessonLocales).toEqual(["pt-PT", "pt-BR", "en-GB"]);
+    expect(ptBRStarterPack.locale).toBe("pt-BR");
+    expect(ptBRStarterPack.items.map((item) => item.text)).toEqual(
+      EXPECTED_STARTER_WORDS,
+    );
+
+    for (const item of ptBRStarterPack.items) {
+      expect(item.id).toMatch(/-pt-br$/);
+      expect(item.locale).toBe("pt-BR");
+
+      const audioIds = [
+        ...(item.audio.letters ?? []),
+        ...(item.audio.syllables ?? []),
+        item.audio.word,
+      ].filter(Boolean);
+
+      expect(audioIds.every((audioId) => audioId?.startsWith("pt-BR."))).toBe(
+        true,
+      );
+    }
+
+    expect(enGBStarterPack.locale).toBe("en-GB");
+    expect(enGBStarterPack.items.map((item) => item.text)).toEqual(
+      EXPECTED_ENGLISH_STARTER_WORDS,
+    );
+
+    for (const item of enGBStarterPack.items) {
+      expect(item.id).toMatch(/-en-gb$/);
+      expect(item.locale).toBe("en-GB");
+      expect(item.displayText).toBe(item.text.toLocaleUpperCase("en-GB"));
+      expect(item.targetSequence.join("")).toBe(item.text);
+      expect(item.graphemes.join("")).toBe(item.text);
+      expect(item.syllables?.join("")).toBe(item.text);
+
+      const audioIds = [
+        ...(item.audio.letters ?? []),
+        ...(item.audio.syllables ?? []),
+        item.audio.word,
+      ].filter(Boolean);
+
+      expect(audioIds.every((audioId) => audioId?.startsWith("en-GB."))).toBe(
+        true,
+      );
+    }
   });
 
   it("keeps required structured fields on each starter lesson word", () => {
@@ -39,6 +107,7 @@ describe("pt-PT starter curriculum", () => {
         word.canonicalText,
       );
       expect(word.imageAsset).toMatch(/^\/images\/.+\.svg$/);
+      expect(word.imageAlt.trim().length).toBeGreaterThan(0);
       expect(word.letterAudioEventIds).toHaveLength(word.expectedKeys.length);
       expect(word.syllableAudioEventIds).toHaveLength(word.syllables.length);
       expect(word.wordAudioEventId).toBe(`pt-PT.word.${word.canonicalText}`);
@@ -50,9 +119,72 @@ describe("pt-PT starter curriculum", () => {
 
   it("has valid curriculum and placeholder audio references", () => {
     expect(validateAudioManifest(ptPTAudioManifest)).toEqual([]);
+    expect(validateAudioManifest(ptBRAudioManifest)).toEqual([]);
+    expect(validateAudioManifest(enGBAudioManifest)).toEqual([]);
     expect(validateStarterLesson(starterLesson, ptPTAudioManifest)).toEqual([]);
-    expect(validateCurriculumPack(ptPTStarterPack, ptPTAudioManifest)).toEqual(
-      [],
+
+    for (const locale of supportedLessonLocales) {
+      expect(
+        validateCurriculumPack(
+          curriculumPacksByLocale[locale],
+          audioManifestsByLocale[locale],
+        ),
+      ).toEqual([]);
+    }
+  });
+
+  it("uses reviewed Portuguese letter audio text without adding accents to plain vowels", () => {
+    const expectedPtPTLetterNames = {
+      "pt-PT.letter.a": "a",
+      "pt-PT.letter.e": "e",
+      "pt-PT.letter.g": "guê",
+      "pt-PT.letter.k": "capa",
+      "pt-PT.letter.o": "o",
+      "pt-PT.letter.ç": "cê cedilhado",
+    };
+    const expectedPtBRLetterNames = {
+      "pt-BR.letter.a": "a",
+      "pt-BR.letter.e": "e",
+      "pt-BR.letter.g": "gê",
+      "pt-BR.letter.k": "cá",
+      "pt-BR.letter.o": "o",
+      "pt-BR.letter.ç": "cê cedilhado",
+    };
+
+    for (const [audioId, text] of Object.entries(expectedPtPTLetterNames)) {
+      expect(resolveAudioAsset(ptPTAudioManifest, audioId)?.text).toBe(text);
+    }
+
+    for (const [audioId, text] of Object.entries(expectedPtBRLetterNames)) {
+      expect(resolveAudioAsset(ptBRAudioManifest, audioId)?.text).toBe(text);
+    }
+  });
+
+  it("keeps pt-BR placeholder audio on Brazilian Portuguese voice assets", () => {
+    expect(
+      ptBRAudioManifest.assets.every(
+        (asset) =>
+          asset.locale === "pt-BR" &&
+          asset.path.startsWith("/audio/pt-BR/") &&
+          asset.voice === "Luciana",
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps en-GB placeholder audio in English paths with an English voice hint", () => {
+    expect(
+      enGBAudioManifest.assets.every(
+        (asset) =>
+          asset.locale === "en-GB" &&
+          asset.path.startsWith("/audio/en-GB/") &&
+          asset.voice === "Shelley",
+      ),
+    ).toBe(true);
+    expect(resolveAudioAsset(enGBAudioManifest, "en-GB.letter.h")?.text).toBe(
+      "aitch",
+    );
+    expect(resolveAudioAsset(enGBAudioManifest, "en-GB.word.house")?.text).toBe(
+      "house",
     );
   });
 
@@ -105,6 +237,11 @@ describe("pt-PT starter curriculum", () => {
           id: "word-missing-word-audio-pt-pt",
           wordAudioEventId: "pt-PT.word.missing",
         },
+        {
+          ...starterLesson.words[4],
+          id: "word-missing-image-alt-pt-pt",
+          imageAlt: "",
+        },
       ],
     };
 
@@ -132,6 +269,12 @@ describe("pt-PT starter curriculum", () => {
       expect.objectContaining({
         code: "curriculum.missing_audio",
         itemId: "word-missing-word-audio-pt-pt",
+      }),
+    );
+    expect(issues).toContainEqual(
+      expect.objectContaining({
+        code: "curriculum.missing_image_alt",
+        itemId: "word-missing-image-alt-pt-pt",
       }),
     );
   });

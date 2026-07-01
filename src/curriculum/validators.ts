@@ -7,6 +7,8 @@ import {
 import type { StarterLesson, StarterLessonWord } from "./starterLesson";
 import type { CurriculumItem, CurriculumPack } from "./types";
 
+const LOCAL_IMAGE_ASSET_PATTERN = /^\/images\/[^/]+\.svg$/u;
+
 export interface ValidationIssue {
   code: string;
   itemId?: string;
@@ -136,6 +138,28 @@ function validateCurriculumItem(
     });
   }
 
+  if (!item.imageAsset?.trim()) {
+    issues.push({
+      code: "curriculum.missing_image_asset",
+      itemId: item.id,
+      message: `${item.id} must include a local image asset`,
+    });
+  } else if (!LOCAL_IMAGE_ASSET_PATTERN.test(item.imageAsset)) {
+    issues.push({
+      code: "curriculum.invalid_image_asset",
+      itemId: item.id,
+      message: `${item.id} image asset must be a local SVG in /images`,
+    });
+  }
+
+  if (!item.imageAlt?.trim()) {
+    issues.push({
+      code: "curriculum.missing_image_alt",
+      itemId: item.id,
+      message: `${item.id} must include accessible image text`,
+    });
+  }
+
   if (item.targetSequence.length === 0) {
     issues.push({
       code: "curriculum.empty_target_sequence",
@@ -240,7 +264,7 @@ function validateCurriculumItem(
       issues.push({
         code: "curriculum.unsupported_target_key",
         itemId: item.id,
-        message: `${item.id} uses unsupported pt-PT keyboard key ${key}`,
+        message: `${item.id} uses unsupported lesson keyboard key ${key}`,
       });
     }
   }
@@ -269,6 +293,28 @@ function validateStarterLessonWord(
       code: "curriculum.empty_target_sequence",
       itemId: word.id,
       message: `${word.id} must include expectedKeys`,
+    });
+  }
+
+  if (!word.imageAsset?.trim()) {
+    issues.push({
+      code: "curriculum.missing_image_asset",
+      itemId: word.id,
+      message: `${word.id} must include a local image asset`,
+    });
+  } else if (!LOCAL_IMAGE_ASSET_PATTERN.test(word.imageAsset)) {
+    issues.push({
+      code: "curriculum.invalid_image_asset",
+      itemId: word.id,
+      message: `${word.id} image asset must be a local SVG in /images`,
+    });
+  }
+
+  if (!word.imageAlt?.trim()) {
+    issues.push({
+      code: "curriculum.missing_image_alt",
+      itemId: word.id,
+      message: `${word.id} must include accessible image text`,
     });
   }
 
@@ -377,7 +423,7 @@ function validateStarterLessonWord(
       issues.push({
         code: "curriculum.unsupported_target_key",
         itemId: word.id,
-        message: `${word.id} uses unsupported pt-PT keyboard key ${key}`,
+        message: `${word.id} uses unsupported lesson keyboard key ${key}`,
       });
     }
   }

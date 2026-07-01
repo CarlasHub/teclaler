@@ -45,7 +45,7 @@ Must show:
 ## Design rules
 
 - Target word is the largest element.
-- Current key is highlighted.
+- The current typing position is highlighted, but keyboard keys are not pre-highlighted as the answer.
 - Typed letters are clear.
 - Audio feedback is visible and audible.
 - Replay is always available.

@@ -39,7 +39,8 @@
         ],
         "word": "pt-PT.word.casa"
       },
-      "imageId": "image.house.simple",
+      "imageAsset": "/images/house-simple.svg",
+      "imageAlt": "Uma casa simples.",
       "difficulty": 1,
       "status": "draft"
     }

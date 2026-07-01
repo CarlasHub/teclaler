@@ -1,4 +1,5 @@
 export type PortugueseLocale = "pt-PT" | "pt-BR";
+export type LessonLocale = PortugueseLocale | "en-GB";
 
 export type CurriculumItemType = "letter" | "syllable" | "word" | "sentence";
 
@@ -21,7 +22,7 @@ export interface CurriculumAudioRefs {
 export interface CurriculumItem {
   id: string;
   type: CurriculumItemType;
-  locale: PortugueseLocale;
+  locale: LessonLocale;
   text: string;
   displayText: string;
   syllables?: string[];
@@ -29,13 +30,15 @@ export interface CurriculumItem {
   targetSequence: string[];
   audio: CurriculumAudioRefs;
   imageId?: string;
+  imageAsset?: string;
+  imageAlt?: string;
   difficulty: number;
   status: CurriculumReviewStatus;
 }
 
 export interface CurriculumPack {
   id: string;
-  locale: PortugueseLocale;
+  locale: LessonLocale;
   version: string;
   title: string;
   items: CurriculumItem[];

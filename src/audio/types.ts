@@ -1,13 +1,13 @@
-import type { PortugueseLocale } from "../curriculum/types";
+import type { LessonLocale } from "../curriculum/types";
 
 export type AudioKind =
-  "letter" | "syllable" | "word" | "sentence" | "feedback";
+  "letter" | "partial" | "syllable" | "word" | "sentence" | "feedback";
 
 export type AudioReviewStatus = "needs_review" | "approved";
 
 export interface AudioManifestAsset {
   id: string;
-  locale: PortugueseLocale;
+  locale: LessonLocale;
   kind: AudioKind;
   text: string;
   path: string;
@@ -18,7 +18,7 @@ export interface AudioManifestAsset {
 
 export interface AudioManifest {
   id: string;
-  locale: PortugueseLocale;
+  locale: LessonLocale;
   version: string;
   assets: AudioManifestAsset[];
 }
@@ -30,7 +30,7 @@ export interface AudioPlaybackOptions {
 
 export interface SpokenAudioMessage {
   text: string;
-  locale?: PortugueseLocale;
+  locale?: LessonLocale;
 }
 
 export interface AudioService {

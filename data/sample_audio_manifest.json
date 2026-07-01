@@ -8,7 +8,7 @@
       "locale": "pt-PT",
       "kind": "letter",
       "text": "cê",
-      "path": "/audio/pt-PT/letters/c.mp3",
+      "path": "/audio/pt-PT/letters/c.wav",
       "reviewStatus": "needs_review"
     },
     {
@@ -16,7 +16,7 @@
       "locale": "pt-PT",
       "kind": "letter",
       "text": "a",
-      "path": "/audio/pt-PT/letters/a.mp3",
+      "path": "/audio/pt-PT/letters/a.wav",
       "reviewStatus": "needs_review"
     },
     {
@@ -24,7 +24,7 @@
       "locale": "pt-PT",
       "kind": "letter",
       "text": "esse",
-      "path": "/audio/pt-PT/letters/s.mp3",
+      "path": "/audio/pt-PT/letters/s.wav",
       "reviewStatus": "needs_review"
     },
     {
@@ -32,7 +32,7 @@
       "locale": "pt-PT",
       "kind": "syllable",
       "text": "ca",
-      "path": "/audio/pt-PT/syllables/ca.mp3",
+      "path": "/audio/pt-PT/syllables/ca.wav",
       "reviewStatus": "needs_review"
     },
     {
@@ -40,7 +40,7 @@
       "locale": "pt-PT",
       "kind": "syllable",
       "text": "sa",
-      "path": "/audio/pt-PT/syllables/sa.mp3",
+      "path": "/audio/pt-PT/syllables/sa.wav",
       "reviewStatus": "needs_review"
     },
     {
@@ -48,7 +48,7 @@
       "locale": "pt-PT",
       "kind": "word",
       "text": "casa",
-      "path": "/audio/pt-PT/words/casa.mp3",
+      "path": "/audio/pt-PT/words/casa.wav",
       "reviewStatus": "needs_review"
     }
   ]

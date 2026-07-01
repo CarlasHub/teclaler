@@ -64,11 +64,13 @@ references/
 
 ## Initial web app foundation
 
-The first working app scaffold is a Vite + React + TypeScript application for the `pt-PT` TeclaLer learning loop. It loads a content-driven five-word starter lesson (`CASA`, `MALA`, `PATO`, `SAPO`, `BOLA`), supports physical keyboard input and the custom Portuguese on-screen keyboard, routes audio through a replaceable manifest-backed audio service, and stores only local progress state in the browser.
+The first working app scaffold is a Vite + React + TypeScript application for the TeclaLer learning loop. It loads content-driven starter lessons, supports physical keyboard input and the custom on-screen keyboard, routes audio through replaceable manifest-backed audio services, and stores only local progress and settings state in the browser.
 
-Starter lesson content lives in `src/curriculum/starterLesson.ts`. The React app consumes generated `CurriculumItem` objects from `src/curriculum/ptPTPack.ts`, so word text, syllables, expected keys, and audio event IDs stay out of UI components.
+The lesson screen includes local `Definições` / `Settings` with flag choices backed by explicit `pt-PT`, `pt-BR`, and `en-GB` lesson variants. The Portuguese starter words are `CASA`, `MALA`, `PATO`, `SAPO`, `BOLA`. The British English starter words are `HOUSE`, `BAG`, `DUCK`, `TOAD`, `BALL`. Each variant uses separate curriculum and audio IDs, so reviewed recordings can replace placeholders without mixing languages or accents.
 
-Real reviewed audio files are not included yet. In development, missing files fall back to browser speech synthesis through the audio adapter. Production release must replace that fallback with approved manifest audio by updating `src/audio/manifest.ts` paths and review statuses.
+Starter lesson content lives in `src/curriculum/starterLesson.ts`. The React app consumes generated `CurriculumItem` objects from `src/curriculum/ptPTPack.ts`, so word text, syllables, expected keys, audio event IDs, and local image assets stay out of UI components.
+
+Reviewed production audio files are not included yet. The repo includes local placeholder voice files under `public/audio/` so letters, word parts, words, replay, and feedback stay audible during development without network access. The current placeholders use Joana for `pt-PT`, Luciana for `pt-BR`, and Shelley for `en-GB`. If a local file is missing or cannot play, the audio adapter falls back to exact-locale browser speech synthesis only. Production release must replace placeholder audio with approved manifest audio by updating `src/audio/manifest.ts` paths and review statuses.
 
 ### Run locally
 
@@ -83,7 +85,7 @@ npm run dev
 npm test
 ```
 
-The current tests cover the pure lesson engine, Portuguese keyboard normalization, on-screen keyboard emission, curriculum/audio validation, structured starter lesson validation, every starter word through physical-keyboard-style input, and full lesson completion through both physical and on-screen keyboard input.
+The current tests cover the pure lesson engine, keyboard normalization, Portuguese and English on-screen keyboard emission, curriculum/audio validation, structured starter lesson validation, every Portuguese starter word through physical-keyboard-style input, and full lesson completion through both physical and on-screen keyboard input.
 
 The lesson screen includes a local `Som` volume control. It defaults to full volume, affects letter, syllable, word, replay, and spoken feedback audio, and stores only the selected level in the browser.
 
@@ -93,7 +95,7 @@ The lesson screen includes a local `Som` volume control. It defaults to full vol
 npm run validate:content
 ```
 
-This checks the local starter lesson, generated curriculum pack, and placeholder audio manifest outside the test suite. It fails for missing audio IDs, duplicate lesson/word/audio IDs, target/display text mismatches, malformed starter lesson fields, syllable or grapheme mismatches, and unsupported `pt-PT` keyboard characters.
+This checks the local starter lesson, generated curriculum packs, and placeholder audio manifests outside the test suite. It fails for missing audio IDs, missing local audio files, duplicate lesson/word/audio IDs, target/display text mismatches, malformed starter lesson fields, missing local image files or metadata, syllable or grapheme mismatches, and unsupported lesson keyboard characters.
 
 To simulate release-mode audio checks without publishing anything:
 
@@ -123,10 +125,10 @@ npm run dev
 3. Open the Network URL shown by Vite on the iPad, for example `http://192.168.x.x:5173/`.
 4. Tap once anywhere on the lesson screen if the browser has not focused the page yet.
 5. Type the visible word using the iPad hardware keyboard or tap the on-screen TeclaLer keyboard.
-6. Use `Próxima palavra` to move through all five starter words: `CASA`, `MALA`, `PATO`, `SAPO`, `BOLA`.
+6. Use `Próxima palavra` / `Next word` to move through the selected starter words.
 7. After completing a word, pressing `Enter` on a hardware keyboard advances to the next word.
 
-The iPad test should confirm that the target word stays visible, the current key is highlighted, wrong keys do not advance, `Ouvir outra vez` remains available, and no account, analytics, ads, external links, cloud sync, or microphone permission appears.
+The iPad test should confirm that the target word stays visible, the current typing position is clear, keyboard keys highlight only after the child interacts, wrong keys do not advance, `Ouvir outra vez` remains available, and no account, analytics, ads, external links, cloud sync, or microphone permission appears.
 
 ### Hardware Test Plan
 

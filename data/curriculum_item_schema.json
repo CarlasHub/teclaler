@@ -28,7 +28,8 @@
     "locale": {
       "enum": [
         "pt-PT",
-        "pt-BR"
+        "pt-BR",
+        "en-GB"
       ]
     },
     "text": {
@@ -57,6 +58,12 @@
     },
     "audio": {
       "type": "object"
+    },
+    "imageAsset": {
+      "type": "string"
+    },
+    "imageAlt": {
+      "type": "string"
     },
     "difficulty": {
       "type": "integer"

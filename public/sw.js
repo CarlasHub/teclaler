@@ -1,11 +1,14 @@
-const CACHE_NAME = "teclaler-app-shell-v2";
+const CACHE_NAME = "teclaler-app-shell-v3";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
   "/images/icon.svg",
   "/images/house-simple.svg",
-  "/images/word-placeholder.svg",
+  "/images/bag-simple.svg",
+  "/images/duck-simple.svg",
+  "/images/toad-simple.svg",
+  "/images/ball-simple.svg",
 ];
 
 self.addEventListener("install", (event) => {

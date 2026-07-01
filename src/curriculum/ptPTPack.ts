@@ -36,10 +36,8 @@ function createWordItem(word: StarterLessonWord): CurriculumItem {
       syllables: word.syllableAudioEventIds,
       word: word.wordAudioEventId,
     },
-    imageId:
-      word.imageAsset === "/images/house-simple.svg"
-        ? "image.house.simple"
-        : undefined,
+    imageAsset: word.imageAsset,
+    imageAlt: word.imageAlt,
     difficulty: word.difficulty,
     status: word.reviewStatus,
   };

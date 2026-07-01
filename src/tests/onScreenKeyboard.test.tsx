@@ -8,7 +8,7 @@ describe("on-screen Portuguese keyboard", () => {
     const user = userEvent.setup();
     const onKeyPress = vi.fn();
 
-    render(<OnScreenKeyboard currentKey="m" onKeyPress={onKeyPress} />);
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} />);
 
     const expectedButtons = [
       ["Tecla Q", "q"],
@@ -51,14 +51,67 @@ describe("on-screen Portuguese keyboard", () => {
     );
   });
 
-  it("emits canonical ç from the touch keyboard and highlights the current key", async () => {
+  it("marks each keyboard row with a stable column count for responsive layout", () => {
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} />);
+
+    const rows = document.querySelectorAll(".keyboard__row");
+
+    expect(rows).toHaveLength(4);
+    expect(rows[0]).toHaveStyle({ "--key-count": "10" });
+    expect(rows[1]).toHaveStyle({ "--key-count": "10" });
+    expect(rows[2]).toHaveStyle({ "--key-count": "7" });
+    expect(rows[3]).toHaveStyle({ "--key-count": "2" });
+    expect(rows[3]).toHaveClass("keyboard__row--actions");
+  });
+
+  it("uses an English keyboard layout without Ç for en-GB lessons", async () => {
     const user = userEvent.setup();
     const onKeyPress = vi.fn();
 
-    render(<OnScreenKeyboard currentKey="ç" onKeyPress={onKeyPress} />);
+    render(<OnScreenKeyboard locale="en-GB" onKeyPress={onKeyPress} />);
+
+    expect(screen.getByLabelText("English keyboard")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Key Q" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Key M" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Key Ç" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Tecla Ç" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Key H" }));
+    await user.click(screen.getByRole("button", { name: "Space" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(onKeyPress.mock.calls.map(([value]) => value)).toEqual([
+      "h",
+      " ",
+      "backspace",
+    ]);
+  });
+
+  it("does not highlight a key before the child presses one", () => {
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} />);
+
+    const cKey = screen.getByRole("button", { name: "Tecla C" });
+    const mKey = screen.getByRole("button", { name: "Tecla M" });
+
+    expect(cKey).toHaveAttribute("aria-pressed", "false");
+    expect(cKey).not.toHaveClass("keyboard__key--pressed");
+    expect(mKey).toHaveAttribute("aria-pressed", "false");
+    expect(mKey).not.toHaveClass("keyboard__key--pressed");
+  });
+
+  it("emits canonical ç from the touch keyboard and highlights it after pressing", async () => {
+    const user = userEvent.setup();
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} pressedKey="ç" />);
 
     const cCedilha = screen.getByRole("button", { name: "Tecla Ç" });
     expect(cCedilha).toHaveAttribute("aria-pressed", "true");
+    expect(cCedilha).toHaveClass("keyboard__key--pressed");
 
     await user.click(cCedilha);
 
@@ -68,19 +121,13 @@ describe("on-screen Portuguese keyboard", () => {
   it("highlights the rejected key instead of the expected key during wrong-key feedback", () => {
     const onKeyPress = vi.fn();
 
-    render(
-      <OnScreenKeyboard
-        currentKey="c"
-        onKeyPress={onKeyPress}
-        rejectedKey="m"
-      />,
-    );
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} rejectedKey="m" />);
 
     const cKey = screen.getByRole("button", { name: "Tecla C" });
     const mKey = screen.getByRole("button", { name: "Tecla M" });
 
     expect(cKey).toHaveAttribute("aria-pressed", "false");
-    expect(cKey).not.toHaveClass("keyboard__key--current");
+    expect(cKey).not.toHaveClass("keyboard__key--pressed");
     expect(mKey).toHaveAttribute("aria-pressed", "true");
     expect(mKey).toHaveClass("keyboard__key--rejected");
   });
@@ -88,16 +135,33 @@ describe("on-screen Portuguese keyboard", () => {
   it("keeps space and backspace keyboard accessible by role and name", () => {
     const onKeyPress = vi.fn();
 
-    render(<OnScreenKeyboard currentKey={null} onKeyPress={onKeyPress} />);
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} />);
 
     expect(screen.getByRole("button", { name: "Espaço" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Apagar" })).toBeEnabled();
   });
 
+  it("supports Space and Enter activation for keyboard-only users", async () => {
+    const user = userEvent.setup();
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} />);
+
+    const cKey = screen.getByRole("button", { name: "Tecla C" });
+    cKey.focus();
+    await user.keyboard("{Space}");
+
+    const aKey = screen.getByRole("button", { name: "Tecla A" });
+    aKey.focus();
+    await user.keyboard("{Enter}");
+
+    expect(onKeyPress.mock.calls.map(([value]) => value)).toEqual(["c", "a"]);
+  });
+
   it("does not duplicate touch input when a touch pointer is followed by click", () => {
     const onKeyPress = vi.fn();
 
-    render(<OnScreenKeyboard currentKey="c" onKeyPress={onKeyPress} />);
+    render(<OnScreenKeyboard onKeyPress={onKeyPress} />);
 
     const cKey = screen.getByRole("button", { name: "Tecla C" });
     fireEvent.pointerDown(cKey, { pointerType: "touch" });
@@ -110,18 +174,17 @@ describe("on-screen Portuguese keyboard", () => {
   it("shows accent keys only when the lesson needs them", async () => {
     const user = userEvent.setup();
     const onKeyPress = vi.fn();
-    const { rerender } = render(
-      <OnScreenKeyboard currentKey="ã" onKeyPress={onKeyPress} />,
-    );
+    const { rerender } = render(<OnScreenKeyboard onKeyPress={onKeyPress} />);
 
     expect(screen.queryByRole("button", { name: "Tecla Ã" })).toBeNull();
 
     rerender(
-      <OnScreenKeyboard currentKey="ã" onKeyPress={onKeyPress} showAccentRow />,
+      <OnScreenKeyboard onKeyPress={onKeyPress} pressedKey="ã" showAccentRow />,
     );
 
     const aTilde = screen.getByRole("button", { name: "Tecla Ã" });
     expect(aTilde).toHaveAttribute("aria-pressed", "true");
+    expect(aTilde).toHaveClass("keyboard__key--pressed");
 
     await user.click(aTilde);
 

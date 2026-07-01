@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { App } from "../app/App";
 import type { AudioService } from "../audio/types";
 import { ptPTStarterPack } from "../curriculum/ptPTPack";
-import type { CurriculumItem } from "../curriculum/types";
+import type { CurriculumItem, LessonLocale } from "../curriculum/types";
 import type { LessonEvent } from "../engine/events";
 import { displayKey } from "../engine/inputEngine";
 import {
@@ -25,7 +25,10 @@ describe("word completion flow", () => {
     expect(screen.getByText("SA")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Tecla C" })).toHaveAttribute(
       "aria-pressed",
-      "true",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Tecla C" })).not.toHaveClass(
+      "keyboard__key--pressed",
     );
     expect(
       screen.getByRole("button", { name: "Próxima palavra" }),
@@ -33,9 +36,15 @@ describe("word completion flow", () => {
   });
 
   it("renders MALA from curriculum data when selected", () => {
-    renderApp(createFakeAudioService(), MALA_ID);
+    renderApp(createFakeAudioService(), { initialItemId: MALA_ID });
 
     expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+    expect(screen.getByLabelText("Lição atual")).not.toHaveClass(
+      "lesson-stage--text-only",
+    );
+    expect(
+      screen.getByRole("img", { name: "Uma mala simples." }),
+    ).toHaveAttribute("src", "/images/bag-simple.svg");
     expect(screen.getByLabelText("Sílabas ma la")).toBeInTheDocument();
     expect(screen.getByText("MA")).toBeInTheDocument();
     expect(screen.getByText("LA")).toBeInTheDocument();
@@ -55,12 +64,211 @@ describe("word completion flow", () => {
     expect(document.querySelectorAll("a")).toHaveLength(0);
   });
 
+  it("offers local Portuguese variant settings and switches to pt-BR audio events", async () => {
+    const user = userEvent.setup();
+    const audioService = createFakeAudioService();
+
+    renderApp(audioService);
+
+    const languageSelect = screen.getByRole("combobox", {
+      name: "Idioma da lição",
+    });
+    expect(languageSelect).toHaveValue("pt-PT");
+    expect(languageSelect).toHaveAccessibleDescription(
+      "Variante portuguesa Português europeu",
+    );
+
+    await user.selectOptions(languageSelect, "pt-BR");
+
+    expect(languageSelect).toHaveValue("pt-BR");
+    expect(languageSelect).toHaveAccessibleDescription(
+      "Variante portuguesa Português do Brasil",
+    );
+    if (window.localStorage) {
+      expect(window.localStorage.getItem("teclaler.lessonLocale")).toBe(
+        "pt-BR",
+      );
+      expect(window.localStorage.getItem("teclaler.portugueseLocale")).toBe(
+        null,
+      );
+    }
+
+    await user.selectOptions(languageSelect, "pt-PT");
+
+    const settingsButton = screen.getByRole("button", { name: "Definições" });
+    expect(settingsButton).toHaveAttribute("aria-haspopup", "dialog");
+    expect(settingsButton.querySelector("svg")).toBeInTheDocument();
+
+    await user.click(settingsButton);
+
+    const settingsDialog = screen.getByRole("dialog", { name: "Definições" });
+    expect(settingsDialog).toBeInTheDocument();
+    expect(document.activeElement).toBe(settingsDialog);
+
+    expect(
+      screen.getByRole("radio", { name: "Português europeu" }),
+    ).toBeChecked();
+
+    const ptBROption = screen.getByRole("radio", {
+      name: "Português do Brasil",
+    });
+    await user.click(ptBROption);
+
+    expect(ptBROption).toBeChecked();
+    expect(languageSelect).toHaveAccessibleDescription(
+      "Variante portuguesa Português do Brasil",
+    );
+    expect(languageSelect).toHaveValue("pt-BR");
+    if (window.localStorage) {
+      expect(window.localStorage.getItem("teclaler.lessonLocale")).toBe(
+        "pt-BR",
+      );
+    }
+
+    fireEvent.keyDown(window, { key: "C" });
+
+    expect(screen.getByRole("button", { name: "Tecla C" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Tecla C" })).toHaveClass(
+      "keyboard__key--pressed",
+    );
+    expect(audioService.play).toHaveBeenCalledWith("pt-BR.letter.c", {
+      interrupt: true,
+      volume: 1,
+    });
+
+    fireEvent.keyDown(window, { key: "L" });
+
+    expect(audioService.speak).toHaveBeenCalledWith(
+      { text: "Precisamos da letra A.", locale: "pt-BR" },
+      { interrupt: true, volume: 1 },
+    );
+
+    fireEvent.keyDown(settingsDialog, { key: "Escape" });
+
+    expect(
+      screen.queryByRole("dialog", { name: "Definições" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("switches to the English starter lesson with English keyboard and audio events", async () => {
+    const user = userEvent.setup();
+    const audioService = createFakeAudioService();
+
+    renderApp(audioService);
+
+    const languageSelect = screen.getByRole("combobox", {
+      name: "Idioma da lição",
+    });
+    await user.selectOptions(languageSelect, "en-GB");
+
+    expect(languageSelect).toHaveValue("en-GB");
+    if (window.localStorage) {
+      expect(window.localStorage.getItem("teclaler.lessonLocale")).toBe(
+        "en-GB",
+      );
+      expect(window.localStorage.getItem("teclaler.portugueseLocale")).toBe(
+        null,
+      );
+    }
+    expect(languageSelect).toHaveAccessibleDescription(
+      "Lesson language British English",
+    );
+    await waitFor(() =>
+      expect(document.documentElement).toHaveAttribute("lang", "en-GB"),
+    );
+    expect(document.title).toBe("TeclaLer - Listen. Read. Type.");
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      "content",
+      "TeclaLer: Listen. Read. Type.",
+    );
+    expect(
+      screen.getByRole("option", { name: "🇵🇹 European Portuguese" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "🇧🇷 Brazilian Portuguese" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "🇬🇧 British English" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Target word HOUSE")).toBeInTheDocument();
+    expect(screen.getByLabelText("Word parts house")).toBeInTheDocument();
+    expect(screen.getByLabelText("English keyboard")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Key H" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Tecla Ç" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Key Ç" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Next word" })).toBeDisabled();
+
+    const settingsButton = screen.getByRole("button", { name: "Settings" });
+    await user.click(settingsButton);
+    expect(
+      screen.getByRole("dialog", { name: "Settings" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "European Portuguese" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "Brazilian Portuguese" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "British English" }),
+    ).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    fireEvent.keyDown(window, { key: "H" });
+
+    expect(screen.getByLabelText("Letter 1 of 5, H")).toBeInTheDocument();
+    expect(audioService.play).toHaveBeenCalledWith("en-GB.letter.h", {
+      interrupt: true,
+      volume: 1,
+    });
+
+    const replayButton = screen.getByRole("button", {
+      name: "Listen again",
+    });
+    expect(replayButton).toBeEnabled();
+    expect(replayButton).toHaveAccessibleDescription("Will play H.");
+
+    fireEvent.keyDown(window, { key: "A" });
+
+    expect(screen.getByText("We need the letter O.")).toBeInTheDocument();
+    expect(audioService.speak).toHaveBeenCalledWith(
+      { text: "We need the letter O.", locale: "en-GB" },
+      { interrupt: true, volume: 1 },
+    );
+    expect(screen.getByLabelText("Letter 2 of 5, empty")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Key A" })).toHaveClass(
+      "keyboard__key--rejected",
+    );
+
+    for (const key of ["O", "U", "S", "E"]) {
+      fireEvent.keyDown(window, { key });
+    }
+
+    await waitFor(() =>
+      expect(screen.getByText("Word complete")).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Next word" })).toBeEnabled();
+    await waitFor(() =>
+      expect(audioService.played).toContain("en-GB.word.house"),
+    );
+  });
+
   it("completes MALA with the physical keyboard and plays every key plus word audio", async () => {
     const audioService = createFakeAudioService();
 
     renderMalaApp(audioService);
 
     fireEvent.keyDown(window, { key: "M" });
+    expect(screen.getByRole("button", { name: "Tecla M" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Tecla M" })).toHaveClass(
+      "keyboard__key--pressed",
+    );
     expect(audioService.play).toHaveBeenCalledWith("pt-PT.letter.m", {
       interrupt: true,
       volume: 1,
@@ -159,7 +367,7 @@ describe("word completion flow", () => {
     const expectedKey = screen.getByRole("button", { name: "Tecla M" });
     const pressedWrongKey = screen.getByRole("button", { name: "Tecla L" });
     expect(expectedKey).toHaveAttribute("aria-pressed", "false");
-    expect(expectedKey).not.toHaveClass("keyboard__key--current");
+    expect(expectedKey).not.toHaveClass("keyboard__key--pressed");
     expect(pressedWrongKey).toHaveAttribute("aria-pressed", "true");
     expect(pressedWrongKey).toHaveClass("keyboard__key--rejected");
     expect(
@@ -179,9 +387,19 @@ describe("word completion flow", () => {
 
     expect(screen.getByLabelText("Letra 1 de 4, M")).toBeInTheDocument();
     expect(screen.getByLabelText("Letra 2 de 4, vazia")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tecla A" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Apagar" })).toHaveAttribute(
       "aria-pressed",
       "true",
+    );
+    expect(screen.getByRole("button", { name: "Apagar" })).toHaveClass(
+      "keyboard__key--pressed",
+    );
+    expect(screen.getByRole("button", { name: "Tecla A" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Tecla A" })).not.toHaveClass(
+      "keyboard__key--pressed",
     );
 
     for (const name of ["Tecla A", "Tecla L", "Tecla A"]) {
@@ -211,9 +429,19 @@ describe("word completion flow", () => {
 
     expect(screen.queryByText("Palavra completa")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Letra 4 de 4, vazia")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tecla A" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Apagar" })).toHaveAttribute(
       "aria-pressed",
       "true",
+    );
+    expect(screen.getByRole("button", { name: "Apagar" })).toHaveClass(
+      "keyboard__key--pressed",
+    );
+    expect(screen.getByRole("button", { name: "Tecla A" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: "Tecla A" })).not.toHaveClass(
+      "keyboard__key--pressed",
     );
     expect(
       screen.getByRole("button", { name: "Próxima palavra" }),
@@ -229,21 +457,78 @@ describe("word completion flow", () => {
     ).toHaveLength(2);
   });
 
-  it("replays the current full word audio instead of the last letter audio", async () => {
+  it("replays the typed letter, syllable, partial text, or full word", async () => {
     const user = userEvent.setup();
     const audioService = createFakeAudioService();
 
-    renderMalaApp(audioService);
+    renderApp(audioService);
 
-    fireEvent.keyDown(window, { key: "M" });
+    const replayButton = screen.getByRole("button", {
+      name: "Ouvir outra vez",
+    });
+    expect(replayButton).toBeDisabled();
+
+    fireEvent.keyDown(window, { key: "C" });
     await waitFor(() =>
-      expect(audioService.played).toContain("pt-PT.letter.m"),
+      expect(audioService.played).toContain("pt-PT.letter.c"),
+    );
+    expect(replayButton).toBeEnabled();
+    expect(replayButton).toHaveAccessibleDescription("Vai ouvir C.");
+
+    const letterReplayCount = audioService.played.filter(
+      (id) => id === "pt-PT.letter.c",
+    ).length;
+    await user.click(replayButton);
+    await waitFor(() =>
+      expect(
+        audioService.played.filter((id) => id === "pt-PT.letter.c"),
+      ).toHaveLength(letterReplayCount + 1),
     );
 
-    await user.click(screen.getByRole("button", { name: "Ouvir outra vez" }));
-
+    fireEvent.keyDown(window, { key: "A" });
     await waitFor(() =>
-      expect(audioService.played.at(-1)).toBe("pt-PT.word.mala"),
+      expect(audioService.played).toContain("pt-PT.syllable.ca"),
+    );
+    expect(replayButton).toHaveAccessibleDescription("Vai ouvir CA.");
+
+    const syllableReplayCount = audioService.played.filter(
+      (id) => id === "pt-PT.syllable.ca",
+    ).length;
+    await user.click(replayButton);
+    await waitFor(() =>
+      expect(
+        audioService.played.filter((id) => id === "pt-PT.syllable.ca"),
+      ).toHaveLength(syllableReplayCount + 1),
+    );
+
+    fireEvent.keyDown(window, { key: "S" });
+    await waitFor(() =>
+      expect(audioService.played).toContain("pt-PT.letter.s"),
+    );
+    expect(replayButton).toHaveAccessibleDescription("Vai ouvir CAS.");
+
+    await user.click(replayButton);
+    await waitFor(() =>
+      expect(audioService.speak).toHaveBeenCalledWith(
+        { text: "cas", locale: "pt-PT" },
+        { interrupt: true, volume: 1 },
+      ),
+    );
+
+    fireEvent.keyDown(window, { key: "A" });
+    await waitFor(() =>
+      expect(audioService.played).toContain("pt-PT.word.casa"),
+    );
+    expect(replayButton).toHaveAccessibleDescription("Vai ouvir CASA.");
+
+    const wordReplayCount = audioService.played.filter(
+      (id) => id === "pt-PT.word.casa",
+    ).length;
+    await user.click(replayButton);
+    await waitFor(() =>
+      expect(
+        audioService.played.filter((id) => id === "pt-PT.word.casa"),
+      ).toHaveLength(wordReplayCount + 1),
     );
     expect(audioService.replayed).toHaveLength(0);
   });
@@ -275,25 +560,41 @@ describe("word completion flow", () => {
     );
   });
 
-  it("restores learning focus after touch keyboard, replay, and navigation", async () => {
+  it("keeps controls keyboard accessible and restores lesson focus after navigation", async () => {
     const user = userEvent.setup();
     const audioService = createFakeAudioService();
 
     renderApp(audioService);
 
     const learningArea = screen.getByTestId("learning-input-area");
+    expect(learningArea).toHaveAttribute("tabindex", "0");
     expect(document.activeElement).toBe(learningArea);
 
-    await user.click(screen.getByRole("button", { name: "Tecla C" }));
-    expect(document.activeElement).toBe(learningArea);
+    const cKey = screen.getByRole("button", { name: "Tecla C" });
+    cKey.focus();
+    await user.keyboard("{Space}");
+    expect(screen.getByLabelText("Letra 1 de 4, C")).toBeInTheDocument();
+    expect(document.activeElement).toBe(cKey);
 
     fireEvent.keyDown(window, { key: "a" });
     expect(screen.getByLabelText("Letra 2 de 4, A")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Ouvir outra vez" }));
-    expect(document.activeElement).toBe(learningArea);
     await waitFor(() =>
-      expect(audioService.played.at(-1)).toBe("pt-PT.word.casa"),
+      expect(audioService.played).toContain("pt-PT.syllable.ca"),
+    );
+
+    const replayButton = screen.getByRole("button", {
+      name: "Ouvir outra vez",
+    });
+    replayButton.focus();
+    const syllableReplayCount = audioService.played.filter(
+      (id) => id === "pt-PT.syllable.ca",
+    ).length;
+    await user.keyboard("{Enter}");
+    expect(document.activeElement).toBe(replayButton);
+    await waitFor(() =>
+      expect(
+        audioService.played.filter((id) => id === "pt-PT.syllable.ca"),
+      ).toHaveLength(syllableReplayCount + 1),
     );
 
     for (const key of ["S", "A"]) {
@@ -411,6 +712,12 @@ describe("word completion flow", () => {
     await user.click(screen.getByRole("button", { name: "Próxima palavra" }));
 
     expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Uma mala simples." }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Lição atual")).not.toHaveClass(
+      "lesson-stage--text-only",
+    );
     expect(screen.getByRole("button", { name: "Anterior" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: "Anterior" }));
@@ -421,19 +728,27 @@ describe("word completion flow", () => {
 });
 
 function renderMalaApp(audioService: AudioService & { played: string[] }) {
-  return renderApp(audioService, MALA_ID);
+  return renderApp(audioService, { initialItemId: MALA_ID });
+}
+
+interface RenderAppOptions {
+  initialItemId?: string;
+  initialLocale?: LessonLocale;
 }
 
 function renderApp(
   audioService: AudioService & { played: string[] },
-  initialItemId?: string,
+  options: RenderAppOptions = {},
 ) {
   window.localStorage?.removeItem("teclaler.audioVolume");
+  window.localStorage?.removeItem("teclaler.portugueseLocale");
+  window.localStorage?.removeItem("teclaler.lessonLocale");
 
   return render(
     <App
       audioService={audioService}
-      initialItemId={initialItemId}
+      initialItemId={options.initialItemId}
+      initialLocale={options.initialLocale}
       progressStore={createMemoryProgressStore()}
     />,
   );

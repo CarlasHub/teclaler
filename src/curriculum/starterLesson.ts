@@ -8,6 +8,7 @@ export interface StarterLessonWord {
   graphemes: string[];
   expectedKeys: string[];
   imageAsset: string;
+  imageAlt: string;
   letterAudioEventIds: string[];
   syllableAudioEventIds: string[];
   wordAudioEventId: string;
@@ -33,6 +34,7 @@ export const starterLessonWords: StarterLessonWord[] = [
     graphemes: ["c", "a", "s", "a"],
     expectedKeys: ["C", "A", "S", "A"],
     imageAsset: "/images/house-simple.svg",
+    imageAlt: "Uma casa simples.",
     letterAudioEventIds: [
       "pt-PT.letter.c",
       "pt-PT.letter.a",
@@ -53,7 +55,8 @@ export const starterLessonWords: StarterLessonWord[] = [
     syllables: ["MA", "LA"],
     graphemes: ["m", "a", "l", "a"],
     expectedKeys: ["M", "A", "L", "A"],
-    imageAsset: "/images/word-placeholder.svg",
+    imageAsset: "/images/bag-simple.svg",
+    imageAlt: "Uma mala simples.",
     letterAudioEventIds: [
       "pt-PT.letter.m",
       "pt-PT.letter.a",
@@ -74,7 +77,8 @@ export const starterLessonWords: StarterLessonWord[] = [
     syllables: ["PA", "TO"],
     graphemes: ["p", "a", "t", "o"],
     expectedKeys: ["P", "A", "T", "O"],
-    imageAsset: "/images/word-placeholder.svg",
+    imageAsset: "/images/duck-simple.svg",
+    imageAlt: "Um pato simples.",
     letterAudioEventIds: [
       "pt-PT.letter.p",
       "pt-PT.letter.a",
@@ -95,7 +99,8 @@ export const starterLessonWords: StarterLessonWord[] = [
     syllables: ["SA", "PO"],
     graphemes: ["s", "a", "p", "o"],
     expectedKeys: ["S", "A", "P", "O"],
-    imageAsset: "/images/word-placeholder.svg",
+    imageAsset: "/images/toad-simple.svg",
+    imageAlt: "Um sapo simples.",
     letterAudioEventIds: [
       "pt-PT.letter.s",
       "pt-PT.letter.a",
@@ -116,7 +121,8 @@ export const starterLessonWords: StarterLessonWord[] = [
     syllables: ["BO", "LA"],
     graphemes: ["b", "o", "l", "a"],
     expectedKeys: ["B", "O", "L", "A"],
-    imageAsset: "/images/word-placeholder.svg",
+    imageAsset: "/images/ball-simple.svg",
+    imageAlt: "Uma bola simples.",
     letterAudioEventIds: [
       "pt-PT.letter.b",
       "pt-PT.letter.o",

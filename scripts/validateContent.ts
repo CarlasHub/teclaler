@@ -1,6 +1,14 @@
-import { ptPTAudioManifest } from "../src/audio/manifest";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import {
+  audioManifestsByLocale,
+  ptPTAudioManifest,
+} from "../src/audio/manifest";
 import { validateAudioManifest } from "../src/audio/validators";
-import { ptPTStarterPack } from "../src/curriculum/ptPTPack";
+import {
+  curriculumPacksByLocale,
+  supportedLessonLocales,
+} from "../src/curriculum/portuguesePacks";
 import { starterLesson } from "../src/curriculum/starterLesson";
 import type { CurriculumPack } from "../src/curriculum/types";
 import {
@@ -15,9 +23,10 @@ interface ContentValidationIssue extends ValidationIssue {
 
 const releaseMode = process.argv.includes("--release");
 const lessons = [starterLesson];
-const packs = [
-  releaseMode ? forcePackIntoReleaseMode(ptPTStarterPack) : ptPTStarterPack,
-];
+const packs = supportedLessonLocales.map((locale) => {
+  const pack = curriculumPacksByLocale[locale];
+  return releaseMode ? forcePackIntoReleaseMode(pack) : pack;
+});
 const issues = validateContent(lessons, packs);
 
 if (issues.length > 0) {
@@ -31,8 +40,12 @@ if (issues.length > 0) {
   process.exitCode = 1;
 } else {
   const itemCount = packs.reduce((count, pack) => count + pack.items.length, 0);
+  const audioItemCount = Object.values(audioManifestsByLocale).reduce(
+    (count, manifest) => count + manifest.assets.length,
+    0,
+  );
   console.log(
-    `Content validation passed: ${lessons.length} starter lesson(s), ${packs.length} lesson pack(s), ${itemCount} word item(s), ${ptPTAudioManifest.assets.length} audio manifest item(s).`,
+    `Content validation passed: ${lessons.length} starter lesson(s), ${packs.length} lesson pack(s), ${itemCount} word item(s), ${audioItemCount} audio manifest item(s).`,
   );
 
   if (releaseMode) {
@@ -49,8 +62,14 @@ function validateContent(
   const issues: ContentValidationIssue[] = [];
   const seenLessonIds = new Set<string>();
 
-  for (const issue of validateAudioManifest(ptPTAudioManifest)) {
-    issues.push({ ...issue, scope: "audio" });
+  for (const manifest of Object.values(audioManifestsByLocale)) {
+    for (const issue of validateAudioManifest(manifest)) {
+      issues.push({ ...issue, scope: "audio" });
+    }
+
+    for (const asset of manifest.assets) {
+      issues.push(...validateLocalAudioFile(asset.id, asset.path));
+    }
   }
 
   for (const lesson of lessonsToValidate) {
@@ -63,6 +82,12 @@ function validateContent(
     }
     seenLessonIds.add(lesson.id);
 
+    for (const word of lesson.words) {
+      issues.push(
+        ...validateLocalImageFile("lesson", word.id, word.imageAsset),
+      );
+    }
+
     for (const issue of validateStarterLesson(lesson, ptPTAudioManifest, {
       enforceReleaseAudioReview: false,
     })) {
@@ -71,12 +96,73 @@ function validateContent(
   }
 
   for (const pack of packsToValidate) {
-    for (const issue of validateCurriculumPack(pack, ptPTAudioManifest)) {
+    const manifest = audioManifestsByLocale[pack.locale];
+
+    for (const item of pack.items) {
+      issues.push(
+        ...validateLocalImageFile("curriculum", item.id, item.imageAsset),
+      );
+    }
+
+    for (const issue of validateCurriculumPack(pack, manifest)) {
       issues.push({ ...issue, scope: "curriculum" });
     }
   }
 
   return issues;
+}
+
+function validateLocalAudioFile(
+  audioId: string,
+  audioAsset: string,
+): ContentValidationIssue[] {
+  const localPublicPath = join(
+    process.cwd(),
+    "public",
+    audioAsset.replace(/^\//u, ""),
+  );
+
+  if (existsSync(localPublicPath)) {
+    return [];
+  }
+
+  return [
+    {
+      code: "missing_audio_file",
+      itemId: audioId,
+      message: `${audioId} references missing local audio file ${audioAsset}`,
+      scope: "audio",
+    },
+  ];
+}
+
+function validateLocalImageFile(
+  scope: ContentValidationIssue["scope"],
+  itemId: string,
+  imageAsset: string | undefined,
+): ContentValidationIssue[] {
+  if (!imageAsset) {
+    return [];
+  }
+
+  const localPublicPath = join(
+    process.cwd(),
+    "public",
+    imageAsset.replace(/^\//u, ""),
+  );
+
+  if (existsSync(localPublicPath)) {
+    return [];
+  }
+
+  return [
+    {
+      code: "missing_image_file",
+      itemId,
+      message: `${itemId} references missing local image file ${imageAsset}`,
+      scope,
+    },
+  ];
 }
 
 function forcePackIntoReleaseMode(pack: CurriculumPack): CurriculumPack {

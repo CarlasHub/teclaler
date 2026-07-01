@@ -13,6 +13,26 @@ https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API
 MDN SpeechSynthesis:
 https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis
 
+## Portuguese letter names
+
+Portal da Língua Portuguesa: Acordo Ortográfico da Língua Portuguesa de 1990, Base I:
+https://www.portaldalinguaportuguesa.org/?action=acordo&id=1-1&version=1990
+
+Ciberdúvidas: Nome da letra G/g and early-letter-teaching note:
+https://ciberduvidas.iscte-iul.pt/consultorio/perguntas/nome-da-letra-gg/13705
+
+Ciberdúvidas: historical note on `gê` / `guê`:
+https://ciberduvidas.iscte-iul.pt/consultorio/perguntas/outra-vez-o-nome-da-letra-g/18535
+
+Priberam: W letter names and Portuguese/Brazilian dictionary variants:
+https://dicionario.priberam.org/w
+
+Priberam: `casa` entry and syllable split `ca · sa`:
+https://dicionario.priberam.org/casa
+
+Portal da Língua Portuguesa: Vocabulário Ortográfico do Português:
+https://www.portaldalinguaportuguesa.org/vop.html
+
 ## Android packaging
 
 Android Developers: Trusted Web Activities:

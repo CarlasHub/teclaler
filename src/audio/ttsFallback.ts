@@ -1,186 +1,244 @@
 import type { AudioManifestAsset } from "./types";
 
 const activeUtterances = new Set<SpeechSynthesisUtterance>();
-const TTS_TIMEOUT_MS = 2500;
-const TONE_DURATION_SECONDS = 0.16;
+const MIN_TTS_TIMEOUT_MS = 2600;
+const TTS_TIMEOUT_MS_PER_CHARACTER = 92;
+const FEMININE_PT_BR_VOICE_NAMES = [
+  "luciana",
+  "francisca",
+  "maria",
+  "helena",
+  "heloisa",
+  "heloísa",
+  "vitoria",
+  "vitória",
+  "leticia",
+  "letícia",
+  "camila",
+  "fernanda",
+  "sandy",
+  "shelley",
+  "flo",
+  "google português do brasil",
+  "google portuguese brazil",
+];
 
-type AudioContextConstructor = typeof AudioContext;
+let cachedVoices: SpeechSynthesisVoice[] = [];
+
+export function prepareDevelopmentTts(): void {
+  if (!hasSpeechSynthesisSupport()) {
+    return;
+  }
+
+  cacheSpeechVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    cacheSpeechVoices();
+  };
+}
 
 export async function speakWithDevelopmentTts(
   asset: AudioManifestAsset | { text: string; locale?: string },
   options: { interrupt?: boolean; volume?: number } = {},
-): Promise<void> {
+): Promise<boolean> {
   if (typeof window === "undefined") {
-    return;
+    return false;
   }
 
   const volume = normalizeVolume(options.volume);
   if (volume === 0) {
-    return;
+    return true;
   }
 
-  if (
-    !("speechSynthesis" in window) ||
-    !("SpeechSynthesisUtterance" in window)
-  ) {
-    await playDevelopmentTone(asset, volume);
-    return;
+  if (!hasSpeechSynthesisSupport()) {
+    return false;
   }
 
   if (options.interrupt) {
-    window.speechSynthesis.cancel();
+    cancelActiveSpeech();
+  }
+
+  const locale = asset.locale ?? "pt-PT";
+  const voices = await loadSpeechVoices();
+  const selectedVoice = selectPreferredVoice(
+    voices,
+    locale,
+    "voice" in asset ? asset.voice : undefined,
+  );
+
+  if (!selectedVoice) {
+    return false;
   }
 
   window.speechSynthesis.resume();
 
-  await new Promise<void>((resolve) => {
+  const spoke = await new Promise<boolean>((resolve) => {
     const utterance = new SpeechSynthesisUtterance(asset.text);
-    utterance.lang = asset.locale ?? "pt-PT";
-    utterance.rate = 0.86;
+    utterance.lang = locale;
+    utterance.voice = selectedVoice;
+    utterance.rate = getSpeechRate(asset);
+    utterance.pitch = getSpeechPitch(locale);
     utterance.volume = volume;
     activeUtterances.add(utterance);
 
     let timeout: number;
-    const finish = () => {
+    const finish = (success: boolean) => {
       window.clearTimeout(timeout);
       activeUtterances.delete(utterance);
-      resolve();
+      resolve(success);
     };
-    timeout = window.setTimeout(finish, TTS_TIMEOUT_MS);
 
-    utterance.onend = finish;
-    utterance.onerror = finish;
+    timeout = window.setTimeout(
+      () => finish(true),
+      getSpeechTimeoutMs(asset.text),
+    );
+
+    utterance.onend = () => finish(true);
+    utterance.onerror = () => finish(false);
     window.speechSynthesis.speak(utterance);
   });
+
+  return spoke;
 }
 
-async function playDevelopmentTone(
-  asset: AudioManifestAsset | { text: string; locale?: string },
-  volume: number,
-): Promise<void> {
-  const frequency = getFallbackFrequency(asset);
-  const AudioContextClass = getAudioContextClass();
-  if (!AudioContextClass) {
-    await playHtmlAudioTone(frequency, volume);
-    return;
+export function selectPreferredVoice(
+  voices: SpeechSynthesisVoice[],
+  locale: string,
+  voiceHint?: string,
+): SpeechSynthesisVoice | null {
+  if (voices.length === 0) {
+    return null;
   }
 
-  try {
-    const context = new AudioContextClass();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    const now = context.currentTime;
+  const normalizedLocale = normalizeLocale(locale);
+  const exactLocaleVoices = voices.filter(
+    (voice) => normalizeLocale(voice.lang) === normalizedLocale,
+  );
 
-    oscillator.type = "sine";
-    oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.16 * volume, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + TONE_DURATION_SECONDS);
-
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(now);
-    oscillator.stop(now + TONE_DURATION_SECONDS);
-
-    await new Promise<void>((resolve) => {
-      oscillator.onended = () => {
-        void context.close();
-        resolve();
-      };
-    });
-  } catch (_error) {
-    await playHtmlAudioTone(frequency, volume);
-  }
-}
-
-function getAudioContextClass(): AudioContextConstructor | null {
-  if ("AudioContext" in window) {
-    return window.AudioContext;
+  if (exactLocaleVoices.length === 0) {
+    return null;
   }
 
-  const prefixedWindow = window as Window & {
-    webkitAudioContext?: AudioContextConstructor;
-  };
-  return prefixedWindow.webkitAudioContext ?? null;
-}
-
-function getFallbackFrequency(
-  asset: AudioManifestAsset | { text: string; locale?: string },
-): number {
-  if ("kind" in asset) {
-    if (asset.kind === "word") {
-      return 659;
-    }
-
-    if (asset.kind === "syllable") {
-      return 587;
+  if (voiceHint) {
+    const normalizedHint = normalizeVoiceName(voiceHint);
+    const hintedVoice = exactLocaleVoices.find((voice) =>
+      normalizeVoiceName(voice.name).includes(normalizedHint),
+    );
+    if (hintedVoice) {
+      return hintedVoice;
     }
   }
 
-  return 523;
-}
+  if (normalizedLocale === "pt-br") {
+    const feminineVoice = exactLocaleVoices.find((voice) =>
+      FEMININE_PT_BR_VOICE_NAMES.some((voiceName) =>
+        normalizeVoiceName(voice.name).includes(voiceName),
+      ),
+    );
 
-async function playHtmlAudioTone(
-  frequency: number,
-  volume: number,
-): Promise<void> {
-  if (!("Audio" in window)) {
-    return;
+    if (feminineVoice) {
+      return feminineVoice;
+    }
   }
 
-  const audio = new Audio(createToneWavDataUri(frequency, volume));
-  audio.volume = volume;
-  await new Promise<void>((resolve) => {
-    audio.onended = () => resolve();
-    audio.onerror = () => resolve();
-    void audio.play().catch(() => resolve());
+  return exactLocaleVoices[0];
+}
+
+export function hasBrowserAudioOutputSupport(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return hasSpeechSynthesisSupport() || hasLocalAudioElementSupport();
+}
+
+function hasSpeechSynthesisSupport(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    "SpeechSynthesisUtterance" in window
+  );
+}
+
+function hasLocalAudioElementSupport(): boolean {
+  if (typeof Audio !== "undefined") {
+    return true;
+  }
+
+  if (typeof document === "undefined") {
+    return false;
+  }
+
+  const audio = document.createElement("audio");
+  return typeof audio.play === "function";
+}
+
+function cancelActiveSpeech(): void {
+  window.speechSynthesis.cancel();
+  activeUtterances.clear();
+}
+
+function cacheSpeechVoices(): SpeechSynthesisVoice[] {
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) {
+    cachedVoices = voices;
+  }
+
+  return cachedVoices;
+}
+
+async function loadSpeechVoices(): Promise<SpeechSynthesisVoice[]> {
+  const voices = cacheSpeechVoices();
+  if (voices.length > 0) {
+    return voices;
+  }
+
+  return new Promise((resolve) => {
+    const previousHandler = window.speechSynthesis.onvoiceschanged;
+
+    const finish = () => {
+      window.clearTimeout(timeout);
+      window.speechSynthesis.onvoiceschanged = previousHandler;
+      resolve(cacheSpeechVoices());
+    };
+
+    const timeout = window.setTimeout(finish, 700);
+    window.speechSynthesis.onvoiceschanged = (event) => {
+      if (typeof previousHandler === "function") {
+        previousHandler.call(window.speechSynthesis, event);
+      }
+
+      finish();
+    };
   });
 }
 
-function createToneWavDataUri(frequency: number, volume: number): string {
-  const sampleRate = 8000;
-  const sampleCount = Math.floor(sampleRate * TONE_DURATION_SECONDS);
-  const buffer = new ArrayBuffer(44 + sampleCount * 2);
-  const view = new DataView(buffer);
-
-  writeAscii(view, 0, "RIFF");
-  view.setUint32(4, 36 + sampleCount * 2, true);
-  writeAscii(view, 8, "WAVE");
-  writeAscii(view, 12, "fmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeAscii(view, 36, "data");
-  view.setUint32(40, sampleCount * 2, true);
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const progress = index / sampleCount;
-    const envelope = Math.sin(Math.PI * progress);
-    const sample =
-      Math.sin((2 * Math.PI * frequency * index) / sampleRate) *
-      0.32 *
-      volume *
-      envelope;
-    view.setInt16(44 + index * 2, sample * 32767, true);
+function getSpeechRate(
+  asset: AudioManifestAsset | { text: string; locale?: string },
+): number {
+  if ("kind" in asset && asset.kind === "letter") {
+    return 0.78;
   }
 
-  const bytes = new Uint8Array(buffer);
-  let binary = "";
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-
-  return `data:audio/wav;base64,${window.btoa(binary)}`;
+  return 0.84;
 }
 
-function writeAscii(view: DataView, offset: number, value: string): void {
-  for (let index = 0; index < value.length; index += 1) {
-    view.setUint8(offset + index, value.charCodeAt(index));
-  }
+function getSpeechPitch(locale: string | undefined): number {
+  return normalizeLocale(locale ?? "pt-PT") === "pt-br" ? 1.08 : 1.02;
+}
+
+function getSpeechTimeoutMs(text: string): number {
+  return Math.max(
+    MIN_TTS_TIMEOUT_MS,
+    Math.min(9000, text.length * TTS_TIMEOUT_MS_PER_CHARACTER),
+  );
+}
+
+function normalizeLocale(locale: string): string {
+  return locale.replace("_", "-").toLocaleLowerCase("en-GB");
+}
+
+function normalizeVoiceName(name: string): string {
+  return name.normalize("NFC").toLocaleLowerCase("pt-BR");
 }
 
 function normalizeVolume(volume: number | undefined): number {

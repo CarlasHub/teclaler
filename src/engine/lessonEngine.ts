@@ -18,6 +18,20 @@ export interface LessonUpdate {
   events: LessonEvent[];
 }
 
+export type LessonReplayTarget =
+  | {
+      disabled: true;
+      displayText: "";
+      text: "";
+    }
+  | {
+      audioId?: string;
+      disabled: false;
+      displayText: string;
+      kind: "letter" | "partial" | "syllable" | "word";
+      text: string;
+    };
+
 export function createLessonState(item: CurriculumItem): LessonState {
   return {
     itemId: item.id,
@@ -135,6 +149,66 @@ export function getCurrentTarget(state: LessonState): string | null {
   }
 
   return state.targetSequence[state.cursorIndex] ?? null;
+}
+
+export function getLessonReplayTarget(
+  item: CurriculumItem,
+  state: LessonState,
+): LessonReplayTarget {
+  const typedText = state.typed
+    .slice(0, state.cursorIndex)
+    .filter((letter): letter is string => Boolean(letter))
+    .join("");
+
+  if (!typedText) {
+    return {
+      disabled: true,
+      displayText: "",
+      text: "",
+    };
+  }
+
+  if (state.completed || state.cursorIndex === state.targetSequence.length) {
+    return {
+      audioId: item.audio.word,
+      disabled: false,
+      displayText: item.displayText,
+      kind: "word",
+      text: item.text,
+    };
+  }
+
+  const syllableIndex = getSyllableBoundaries(item).findIndex(
+    (boundary) => boundary === state.cursorIndex,
+  );
+  const syllable = item.syllables?.[syllableIndex];
+
+  if (syllableIndex >= 0 && syllable) {
+    return {
+      audioId: item.audio.syllables?.[syllableIndex],
+      disabled: false,
+      displayText: syllable.toLocaleUpperCase(item.locale),
+      kind: "syllable",
+      text: normalizePortugueseText(syllable),
+    };
+  }
+
+  if (state.cursorIndex === 1) {
+    return {
+      audioId: item.audio.letters?.[0],
+      disabled: false,
+      displayText: typedText.toLocaleUpperCase(item.locale),
+      kind: "letter",
+      text: typedText,
+    };
+  }
+
+  return {
+    disabled: false,
+    displayText: typedText.toLocaleUpperCase(item.locale),
+    kind: "partial",
+    text: typedText,
+  };
 }
 
 export function getSyllableBoundaries(item: CurriculumItem): number[] {

@@ -33,7 +33,7 @@ flowchart TB
 interface CurriculumItem {
   id: string;
   type: 'letter' | 'syllable' | 'word' | 'sentence';
-  locale: 'pt-PT' | 'pt-BR';
+  locale: 'pt-PT' | 'pt-BR' | 'en-GB';
   text: string;
   displayText: string;
   syllables?: string[];
@@ -46,6 +46,8 @@ interface CurriculumItem {
     sentence?: string;
   };
   imageId?: string;
+  imageAsset?: string;
+  imageAlt?: string;
   difficulty: number;
   status: 'draft' | 'pedagogy_review' | 'pronunciation_review' | 'ready_for_dev' | 'ready_for_release' | 'released' | 'retired';
 }
@@ -74,6 +76,12 @@ interface AudioService {
 ```
 
 Production uses audio files. Development may use Web Speech API fallback.
+
+## Lesson locales and Portuguese variants
+
+The MVP exposes `pt-PT`, `pt-BR`, and `en-GB` as explicit local lesson settings. Each locale must use a matching curriculum pack and audio manifest; the UI must not relabel one locale while playing another locale's audio IDs.
+
+Portuguese variants remain explicit pedagogy variants. Released Portuguese lessons must not mix `pt-PT` and `pt-BR` pronunciation in one lesson.
 
 ## PWA/offline
 

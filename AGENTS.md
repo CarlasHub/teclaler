@@ -17,7 +17,7 @@ see text → press key → hear Portuguese audio → complete syllable → compl
 ## Hard product constraints
 
 - The target word or sentence must always be visible in the lesson screen.
-- The current letter/key must be visually highlighted.
+- The current typing position must be visually highlighted, but the keyboard must not reveal the expected key before the child interacts. Highlight a keyboard key only after it is pressed/tapped or rejected.
 - Physical keyboard and custom touch keyboard must both work.
 - The child-facing UI must stay calm and low-distraction.
 - No ads, social sharing, public leaderboards, or streak-pressure mechanics.

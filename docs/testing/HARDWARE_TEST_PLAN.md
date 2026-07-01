@@ -18,7 +18,7 @@ npm run dev
 http://192.168.x.x:5173/
 ```
 
-- Keep device volume on because placeholder audio may use browser text-to-speech.
+- Keep device volume on. Starter lessons use local placeholder voice files, with browser text-to-speech only as a backup.
 - Use a fresh browser tab when possible.
 
 ## Expected Results For Every Device
@@ -26,7 +26,7 @@ http://192.168.x.x:5173/
 - The target word is always visible.
 - Syllables stay visible.
 - Typing boxes stay visible and update only after correct input.
-- The current key remains clearly highlighted.
+- The current typing position remains clear, and keyboard keys are highlighted only after the child presses or taps them.
 - Wrong keys do not fill a box or advance the lesson.
 - Wrong-key feedback stays calm, for example `Precisamos da letra C.`
 - Wrong-key feedback is also spoken clearly.
@@ -43,7 +43,7 @@ http://192.168.x.x:5173/
 
 | Step | Expected result | Tester notes |
 | --- | --- | --- |
-| Load the app. | `CASA` appears with `CA` and `SA`, empty typing boxes, and `C` highlighted. | |
+| Load the app. | `CASA` appears with `CA` and `SA`, empty typing boxes, and no keyboard key highlighted before input. | |
 | Complete `CASA` using the physical keyboard. | Each correct key fills one box and plays Portuguese audio; completion plays `casa`. | |
 | Complete `MALA` using the physical keyboard. | Same learning loop works for `MALA`. | |
 | Complete `PATO` using the physical keyboard. | Same learning loop works for `PATO`. | |
@@ -51,9 +51,9 @@ http://192.168.x.x:5173/
 | Complete `BOLA` using the physical keyboard. | Completion shows `Lição completa`. | |
 | Press a wrong key before the first letter. | The box stays empty and calm feedback appears. | |
 | Listen to the wrong-key feedback. | The same message is heard clearly. | |
-| Use `Backspace` after partial input. | The most recent typed letter is removed and the current key moves back. | |
+| Use `Backspace` after partial input. | The most recent typed letter is removed and the current typing position moves back. | |
 | Use `Backspace` after completion. | `Palavra completa` disappears and the last letter can be retyped. | |
-| Press `Ouvir outra vez`. | The current full word audio plays. | |
+| Press `Ouvir outra vez`. | The typed letter, completed syllable, partial typed text, or full word audio plays. | |
 | Adjust `Som`, then press `Ouvir outra vez`. | The replay volume changes without affecting lesson state. | |
 | Check `Próxima palavra` before completion. | It is disabled. | |
 | Move forward, then press `Anterior`. | The previous word appears without confusing stale typed letters. | |
@@ -79,7 +79,7 @@ http://192.168.x.x:5173/
 | Load the app. | Word, syllables, typing boxes, replay, progress, navigation, and keyboard fit the screen. | |
 | Tap around the lesson screen. | No unnecessary native keyboard appears. | |
 | Complete all five words using touch only. | Every touch key advances only when correct and plays audio. | |
-| Use `Apagar`. | Rollback works and current-key highlight updates. | |
+| Use `Apagar`. | Rollback works and the current typing position updates. | |
 | Press `Ouvir outra vez`. | Current word audio plays. | |
 | Adjust `Som`. | Audio stays clear at the selected level. | |
 | Move between words. | `Anterior` and `Próxima palavra` do not cause layout jumping or stale state. | |

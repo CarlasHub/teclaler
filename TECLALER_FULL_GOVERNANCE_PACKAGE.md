@@ -23,7 +23,7 @@ The child should not have to guess what is happening. The screen should show:
 - the word,
 - the syllables,
 - the typed letters,
-- the current key,
+- the current typing position, without pre-highlighting the expected keyboard key,
 - the audio cue,
 - the replay button,
 - the Portuguese keyboard.

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" role="img" aria-labelledby="title desc">
+  <title id="title">Bola</title>
+  <desc id="desc">Uma bola simples com gomos coloridos.</desc>
+  <rect width="360" height="280" rx="36" fill="#fff8ef"/>
+  <ellipse cx="180" cy="235" rx="104" ry="20" fill="#e7cfac"/>
+  <circle cx="180" cy="143" r="86" fill="#ffffff" stroke="#23476f" stroke-width="7"/>
+  <path d="M180 57C210 85 226 112 226 143C226 174 210 201 180 229C150 201 134 174 134 143C134 112 150 85 180 57Z" fill="#f3d65a" stroke="#23476f" stroke-width="6"/>
+  <path d="M97 124C124 131 151 135 180 135C209 135 236 131 263 124" fill="none" stroke="#23476f" stroke-width="6" stroke-linecap="round"/>
+  <path d="M99 164C126 156 153 152 180 152C207 152 234 156 261 164" fill="none" stroke="#23476f" stroke-width="6" stroke-linecap="round"/>
+  <path d="M127 81C139 103 145 123 145 143C145 163 139 183 127 205" fill="#f47f6b" stroke="#23476f" stroke-width="6"/>
+  <path d="M233 81C221 103 215 123 215 143C215 163 221 183 233 205" fill="#6eb8db" stroke="#23476f" stroke-width="6"/>
+</svg>

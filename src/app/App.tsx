@@ -1,15 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createBrowserAudioService } from "../audio/audioService";
 import { resolveAudioText } from "../audio/audioManifest";
-import { ptPTAudioManifest } from "../audio/manifest";
+import { audioManifestsByLocale } from "../audio/manifest";
+import { hasBrowserAudioOutputSupport } from "../audio/ttsFallback";
 import type { AudioService } from "../audio/types";
 import { LessonScreen } from "../components/LessonScreen";
-import { ptPTStarterPack } from "../curriculum/ptPTPack";
+import {
+  curriculumPacksByLocale,
+  supportedLessonLocales,
+} from "../curriculum/portuguesePacks";
+import type { CurriculumPack, LessonLocale } from "../curriculum/types";
 import type { LessonEvent } from "../engine/events";
 import { displayKey, normalizePhysicalKey } from "../engine/inputEngine";
 import {
   createLessonState,
   getCurrentTarget,
+  getLessonReplayTarget,
   processLessonBackspace,
   processLessonInput,
 } from "../engine/lessonEngine";
@@ -22,27 +28,49 @@ import {
 interface AppProps {
   audioService?: AudioService;
   initialItemId?: string;
+  initialLocale?: LessonLocale;
   progressStore?: ProgressStore;
 }
 
 type AudioLessonEvent = Extract<LessonEvent, { audioId?: string }>;
 const AUDIO_VOLUME_STORAGE_KEY = "teclaler.audioVolume";
+const LESSON_LOCALE_STORAGE_KEY = "teclaler.lessonLocale";
+const LEGACY_PORTUGUESE_LOCALE_STORAGE_KEY = "teclaler.portugueseLocale";
 const DEFAULT_AUDIO_VOLUME = 1;
 const MIN_AUDIO_VOLUME = 0.25;
 
-export function App({ audioService, initialItemId, progressStore }: AppProps) {
+export function App({
+  audioService,
+  initialItemId,
+  initialLocale,
+  progressStore,
+}: AppProps) {
   const learningInputRef = useRef<HTMLElement | null>(null);
+  const [selectedLocale, setSelectedLocale] = useState<LessonLocale>(
+    () => initialLocale ?? loadPreferredLessonLocale(),
+  );
+  const [audioUnavailable, setAudioUnavailable] = useState(
+    () => !hasBrowserAudioOutputSupport(),
+  );
+  const currentPack = curriculumPacksByLocale[selectedLocale];
+  const currentManifest = audioManifestsByLocale[selectedLocale];
   const service = useMemo(
-    () => audioService ?? createBrowserAudioService(ptPTAudioManifest),
-    [audioService],
+    () =>
+      audioService ??
+      createBrowserAudioService(currentManifest, {
+        onAudioAvailable: () => setAudioUnavailable(false),
+        onAudioUnavailable: () =>
+          setAudioUnavailable(!hasBrowserAudioOutputSupport()),
+      }),
+    [audioService, currentManifest],
   );
   const progress = useMemo(
     () => progressStore ?? createBrowserProgressStore(),
     [progressStore],
   );
-  const initialItemIndex = getInitialItemIndex(initialItemId);
+  const initialItemIndex = getInitialItemIndex(initialItemId, currentPack);
   const [currentItemIndex, setCurrentItemIndex] = useState(initialItemIndex);
-  const currentItem = ptPTStarterPack.items[currentItemIndex];
+  const currentItem = currentPack.items[currentItemIndex];
   const [lessonState, setLessonStateValue] = useState(() =>
     createLessonState(currentItem),
   );
@@ -53,10 +81,12 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
   );
   const [audioCue, setAudioCue] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [rejectedKey, setRejectedKey] = useState<string | null>(null);
   const [audioVolume, setAudioVolume] = useState(loadAudioVolume);
   const canGoPrevious = currentItemIndex > 0;
-  const canGoNext = currentItemIndex < ptPTStarterPack.items.length - 1;
+  const canGoNext = currentItemIndex < currentPack.items.length - 1;
+  const replayTarget = getLessonReplayTarget(currentItem, lessonState);
 
   const restoreLearningFocus = useCallback(() => {
     learningInputRef.current?.focus({ preventScroll: true });
@@ -73,7 +103,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       const cueEvent = audioEvents[audioEvents.length - 1];
 
       if (cueEvent?.audioId) {
-        setAudioCue(resolveAudioText(ptPTAudioManifest, cueEvent.audioId));
+        setAudioCue(resolveAudioText(currentManifest, cueEvent.audioId));
       }
 
       const [firstAudioId, ...queuedAudioIds] = audioEvents.map(
@@ -91,7 +121,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       );
       void audioQueueRef.current;
     },
-    [audioVolume, service],
+    [audioVolume, currentManifest, service],
   );
 
   const handleAudioVolumeChange = useCallback((nextVolume: number) => {
@@ -102,15 +132,38 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
 
   const selectLesson = useCallback(
     (nextIndex: number) => {
-      const nextItem = ptPTStarterPack.items[nextIndex];
+      const nextItem = currentPack.items[nextIndex];
       setCurrentItemIndex(nextIndex);
       setLessonState(createLessonState(nextItem));
       setAudioCue(null);
       setFeedbackMessage(null);
+      setPressedKey(null);
       setRejectedKey(null);
       restoreLearningFocus();
     },
-    [restoreLearningFocus, setLessonState],
+    [currentPack, restoreLearningFocus, setLessonState],
+  );
+
+  const handleLessonLocaleChange = useCallback(
+    (nextLocale: LessonLocale) => {
+      if (nextLocale === selectedLocale) {
+        return;
+      }
+
+      const nextPack = curriculumPacksByLocale[nextLocale];
+      const nextIndex = Math.min(currentItemIndex, nextPack.items.length - 1);
+      const nextItem = nextPack.items[nextIndex];
+
+      savePreferredLessonLocale(nextLocale);
+      setSelectedLocale(nextLocale);
+      setCurrentItemIndex(nextIndex);
+      setLessonState(createLessonState(nextItem));
+      setAudioCue(null);
+      setFeedbackMessage(null);
+      setPressedKey(null);
+      setRejectedKey(null);
+    },
+    [currentItemIndex, selectedLocale, setLessonState],
   );
 
   const handleNextLesson = useCallback(() => {
@@ -134,9 +187,9 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
     setLessonState(update.state);
     setFeedbackMessage(null);
     setAudioCue(null);
+    setPressedKey("backspace");
     setRejectedKey(null);
-    restoreLearningFocus();
-  }, [currentItem, restoreLearningFocus, setLessonState]);
+  }, [currentItem, setLessonState]);
 
   const handleCanonicalInput = useCallback(
     (key: string) => {
@@ -161,22 +214,30 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
           (event) => event.type === "KEY_REJECTED",
         );
         if (rejectedEvent?.type === "KEY_REJECTED") {
-          const message = `Precisamos da letra ${displayKey(rejectedEvent.expected)}.`;
+          const message = getWrongKeyFeedback(
+            currentItem.locale,
+            rejectedEvent.expected,
+          );
           setFeedbackMessage(message);
+          setPressedKey(null);
           setRejectedKey(rejectedEvent.actual);
           void service.speak(
             { text: message, locale: currentItem.locale },
             { interrupt: true, volume: audioVolume },
           );
         } else {
+          const acceptedEvent = update.events.find(
+            (event) => event.type === "KEY_ACCEPTED",
+          );
           setFeedbackMessage(null);
+          setPressedKey(
+            acceptedEvent?.type === "KEY_ACCEPTED" ? acceptedEvent.char : null,
+          );
           setRejectedKey(null);
         }
 
         playAudioEvents(update.events);
       }
-
-      restoreLearningFocus();
     },
     [
       currentItem,
@@ -184,23 +245,41 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       audioVolume,
       playAudioEvents,
       progress,
-      restoreLearningFocus,
       service,
       setLessonState,
     ],
   );
 
   const handleReplay = useCallback(() => {
-    if (currentItem.audio.word) {
-      setAudioCue(resolveAudioText(ptPTAudioManifest, currentItem.audio.word));
-      audioQueueRef.current = Promise.resolve();
-      void service.play(currentItem.audio.word, {
+    const target = getLessonReplayTarget(currentItem, lessonStateRef.current);
+    if (target.disabled) {
+      return;
+    }
+
+    setAudioCue(target.displayText);
+    audioQueueRef.current = Promise.resolve();
+
+    if (target.audioId) {
+      void service.play(target.audioId, {
         interrupt: true,
         volume: audioVolume,
       });
+      return;
     }
-    restoreLearningFocus();
-  }, [audioVolume, currentItem, restoreLearningFocus, service]);
+
+    void service.speak(
+      { text: target.text, locale: currentItem.locale },
+      { interrupt: true, volume: audioVolume },
+    );
+  }, [audioVolume, currentItem, service]);
+
+  useEffect(() => {
+    setAudioUnavailable(!hasBrowserAudioOutputSupport());
+  }, [selectedLocale]);
+
+  useEffect(() => {
+    updateDocumentLanguage(selectedLocale);
+  }, [selectedLocale]);
 
   useEffect(() => {
     const audioIds = [
@@ -213,6 +292,10 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (shouldLetFocusedControlHandleKey(event)) {
+        return;
+      }
+
       if (
         event.key === "Enter" &&
         lessonStateRef.current.completed &&
@@ -243,6 +326,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
   return (
     <LessonScreen
       audioCue={audioCue}
+      audioUnavailable={audioUnavailable}
       canGoNext={canGoNext && lessonState.completed}
       canGoPrevious={canGoPrevious}
       currentKey={getCurrentTarget(lessonState)}
@@ -252,7 +336,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       learningInputRef={learningInputRef}
       lessonPosition={{
         current: currentItemIndex + 1,
-        total: ptPTStarterPack.items.length,
+        total: currentPack.items.length,
       }}
       lessonState={lessonState}
       localCompletionCount={
@@ -262,20 +346,53 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       onAudioVolumeChange={handleAudioVolumeChange}
       onKeyPress={handleCanonicalInput}
       onPreviousLesson={handlePreviousLesson}
+      onLessonLocaleChange={handleLessonLocaleChange}
       onReplay={handleReplay}
+      pressedKey={pressedKey}
+      lessonLocale={selectedLocale}
+      replayDisabled={replayTarget.disabled}
+      replayText={replayTarget.displayText}
       rejectedKey={rejectedKey}
+      supportedLessonLocales={supportedLessonLocales}
     />
   );
 }
 
-function getInitialItemIndex(initialItemId: string | undefined): number {
+function shouldLetFocusedControlHandleKey(event: KeyboardEvent): boolean {
+  const target = event.target;
+
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  const tagName = target.tagName.toLowerCase();
+
+  if (tagName === "input" || tagName === "select" || tagName === "textarea") {
+    return true;
+  }
+
+  return (
+    tagName === "button" &&
+    (event.key === "Enter" ||
+      event.key === " " ||
+      event.key === "Spacebar" ||
+      event.key.toLocaleLowerCase("pt-PT") === "space")
+  );
+}
+
+function getInitialItemIndex(
+  initialItemId: string | undefined,
+  pack: CurriculumPack,
+): number {
   if (!initialItemId) {
     return 0;
   }
 
-  const index = ptPTStarterPack.items.findIndex(
-    (item) => item.id === initialItemId,
-  );
+  const index = pack.items.findIndex((item) => item.id === initialItemId);
   return index >= 0 ? index : 0;
 }
 
@@ -323,12 +440,77 @@ function saveAudioVolume(volume: number): void {
   );
 }
 
+function loadPreferredLessonLocale(): LessonLocale {
+  const storage = getLocalStorage();
+  if (!storage) {
+    return "pt-PT";
+  }
+
+  const storedLocale =
+    storage.getItem(LESSON_LOCALE_STORAGE_KEY) ??
+    storage.getItem(LEGACY_PORTUGUESE_LOCALE_STORAGE_KEY);
+  return isSupportedLessonLocale(storedLocale) ? storedLocale : "pt-PT";
+}
+
+function savePreferredLessonLocale(locale: LessonLocale): void {
+  const storage = getLocalStorage();
+  if (!storage) {
+    return;
+  }
+
+  storage.setItem(LESSON_LOCALE_STORAGE_KEY, locale);
+  storage.removeItem(LEGACY_PORTUGUESE_LOCALE_STORAGE_KEY);
+}
+
+function isSupportedLessonLocale(
+  locale: string | null,
+): locale is LessonLocale {
+  return supportedLessonLocales.includes(locale as LessonLocale);
+}
+
+function getWrongKeyFeedback(locale: LessonLocale, expected: string): string {
+  const letter = displayKey(expected);
+  if (locale === "en-GB") {
+    return `We need the letter ${letter}.`;
+  }
+
+  return `Precisamos da letra ${letter}.`;
+}
+
 function normalizeAudioVolume(volume: number): number {
   if (!Number.isFinite(volume)) {
     return DEFAULT_AUDIO_VOLUME;
   }
 
   return Math.min(1, Math.max(MIN_AUDIO_VOLUME, volume));
+}
+
+function updateDocumentLanguage(locale: LessonLocale): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.documentElement.lang = locale;
+  document.title =
+    locale === "en-GB"
+      ? "TeclaLer - Listen. Read. Type."
+      : "TeclaLer - Ouve. Lê. Escreve.";
+
+  const description =
+    document.querySelector<HTMLMetaElement>('meta[name="description"]') ??
+    createMetaDescriptionElement();
+
+  description.content =
+    locale === "en-GB"
+      ? "TeclaLer: Listen. Read. Type."
+      : "TeclaLer: Ouve. Lê. Escreve.";
+}
+
+function createMetaDescriptionElement(): HTMLMetaElement {
+  const description = document.createElement("meta");
+  description.name = "description";
+  document.head.append(description);
+  return description;
 }
 
 function getLocalStorage(): Storage | null {
