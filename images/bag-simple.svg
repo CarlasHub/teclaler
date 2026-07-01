@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" role="img" aria-labelledby="title desc">
+  <title id="title">Mala</title>
+  <desc id="desc">Uma mala simples com pega e fecho.</desc>
+  <rect width="360" height="280" rx="36" fill="#f2f7fb"/>
+  <ellipse cx="180" cy="235" rx="116" ry="20" fill="#c7d9e8"/>
+  <path d="M137 104V86C137 66 153 52 180 52C207 52 223 66 223 86V104" fill="none" stroke="#6d5b4f" stroke-width="14" stroke-linecap="round"/>
+  <rect x="82" y="96" width="196" height="130" rx="22" fill="#e2a350" stroke="#8c5d2f" stroke-width="6"/>
+  <rect x="98" y="116" width="164" height="90" rx="12" fill="#f1bd70"/>
+  <path d="M180 98V224" stroke="#8c5d2f" stroke-width="6"/>
+  <rect x="160" y="137" width="40" height="24" rx="8" fill="#fff5d6" stroke="#8c5d2f" stroke-width="5"/>
+  <circle cx="118" cy="226" r="12" fill="#6d5b4f"/>
+  <circle cx="242" cy="226" r="12" fill="#6d5b4f"/>
+</svg>

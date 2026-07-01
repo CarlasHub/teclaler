@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" role="img" aria-labelledby="title desc">
+  <title id="title">Casa</title>
+  <desc id="desc">Uma casa simples com telhado vermelho, porta castanha e árvores pequenas.</desc>
+  <rect width="360" height="280" rx="36" fill="#e8f7fb"/>
+  <ellipse cx="180" cy="236" rx="116" ry="24" fill="#b9d978"/>
+  <rect x="112" y="118" width="140" height="106" rx="10" fill="#fff4dd" stroke="#d8b98a" stroke-width="4"/>
+  <path d="M92 128L181 54L270 128Z" fill="#d46635" stroke="#a94625" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M122 108L181 58L240 108Z" fill="#e9834d"/>
+  <rect x="166" y="166" width="34" height="58" rx="16" fill="#9d5a2c" stroke="#70401f" stroke-width="4"/>
+  <circle cx="191" cy="195" r="3" fill="#f7d083"/>
+  <rect x="128" y="142" width="30" height="30" rx="4" fill="#99d4f0" stroke="#7b5130" stroke-width="4"/>
+  <rect x="209" y="142" width="30" height="30" rx="4" fill="#99d4f0" stroke="#7b5130" stroke-width="4"/>
+  <line x1="143" y1="142" x2="143" y2="172" stroke="#7b5130" stroke-width="3"/>
+  <line x1="128" y1="157" x2="158" y2="157" stroke="#7b5130" stroke-width="3"/>
+  <line x1="224" y1="142" x2="224" y2="172" stroke="#7b5130" stroke-width="3"/>
+  <line x1="209" y1="157" x2="239" y2="157" stroke="#7b5130" stroke-width="3"/>
+  <rect x="122" y="76" width="22" height="36" rx="3" fill="#f5dfbd" stroke="#bf8d62" stroke-width="4"/>
+  <path d="M112 82H151" stroke="#d46635" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="76" cy="205" r="26" fill="#68aa47"/>
+  <circle cx="59" cy="216" r="18" fill="#79bd55"/>
+  <rect x="69" y="216" width="12" height="28" rx="5" fill="#8a5b34"/>
+  <circle cx="285" cy="203" r="23" fill="#68aa47"/>
+  <circle cx="302" cy="215" r="17" fill="#79bd55"/>
+  <rect x="286" y="216" width="11" height="28" rx="5" fill="#8a5b34"/>
+</svg>

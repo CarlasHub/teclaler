@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" role="img" aria-labelledby="title desc">
+  <title id="title">Pato</title>
+  <desc id="desc">Um pato simples junto a agua calma.</desc>
+  <rect width="360" height="280" rx="36" fill="#eef8ff"/>
+  <ellipse cx="180" cy="225" rx="132" ry="28" fill="#a9d8f0"/>
+  <ellipse cx="168" cy="160" rx="80" ry="54" fill="#f2cc4c" stroke="#9d7b24" stroke-width="6"/>
+  <circle cx="229" cy="125" r="42" fill="#f6d967" stroke="#9d7b24" stroke-width="6"/>
+  <path d="M259 128L310 144L259 160Z" fill="#e8833a" stroke="#9b5125" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="239" cy="113" r="6" fill="#24334d"/>
+  <path d="M111 145C87 130 74 105 75 80C101 91 123 111 134 136" fill="#f6d967" stroke="#9d7b24" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M108 224C130 214 159 213 185 225C207 235 234 234 254 222" fill="none" stroke="#5aa4c8" stroke-width="8" stroke-linecap="round"/>
+</svg>
