@@ -65,6 +65,35 @@ describe("on-screen Portuguese keyboard", () => {
     expect(onKeyPress).toHaveBeenCalledWith("ç");
   });
 
+  it("highlights the rejected key instead of the expected key during wrong-key feedback", () => {
+    const onKeyPress = vi.fn();
+
+    render(
+      <OnScreenKeyboard
+        currentKey="c"
+        onKeyPress={onKeyPress}
+        rejectedKey="m"
+      />,
+    );
+
+    const cKey = screen.getByRole("button", { name: "Tecla C" });
+    const mKey = screen.getByRole("button", { name: "Tecla M" });
+
+    expect(cKey).toHaveAttribute("aria-pressed", "false");
+    expect(cKey).not.toHaveClass("keyboard__key--current");
+    expect(mKey).toHaveAttribute("aria-pressed", "true");
+    expect(mKey).toHaveClass("keyboard__key--rejected");
+  });
+
+  it("keeps space and backspace keyboard accessible by role and name", () => {
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard currentKey={null} onKeyPress={onKeyPress} />);
+
+    expect(screen.getByRole("button", { name: "Espaço" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Apagar" })).toBeEnabled();
+  });
+
   it("does not duplicate touch input when a touch pointer is followed by click", () => {
     const onKeyPress = vi.fn();
 

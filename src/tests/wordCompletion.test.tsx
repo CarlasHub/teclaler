@@ -60,7 +60,12 @@ describe("word completion flow", () => {
 
     renderMalaApp(audioService);
 
-    for (const key of ["M", "A", "L", "A"]) {
+    fireEvent.keyDown(window, { key: "M" });
+    expect(audioService.play).toHaveBeenCalledWith("pt-PT.letter.m", {
+      interrupt: true,
+    });
+
+    for (const key of ["A", "L", "A"]) {
       fireEvent.keyDown(window, { key });
     }
 
@@ -144,10 +149,12 @@ describe("word completion flow", () => {
 
     expect(screen.getByText("Precisamos da letra M.")).toBeInTheDocument();
     expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tecla M" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    const expectedKey = screen.getByRole("button", { name: "Tecla M" });
+    const pressedWrongKey = screen.getByRole("button", { name: "Tecla L" });
+    expect(expectedKey).toHaveAttribute("aria-pressed", "false");
+    expect(expectedKey).not.toHaveClass("keyboard__key--current");
+    expect(pressedWrongKey).toHaveAttribute("aria-pressed", "true");
+    expect(pressedWrongKey).toHaveClass("keyboard__key--rejected");
     expect(
       screen.getByRole("button", { name: "Próxima palavra" }),
     ).toBeDisabled();

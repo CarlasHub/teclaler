@@ -9,12 +9,14 @@ import {
 interface OnScreenKeyboardProps {
   currentKey: string | null;
   onKeyPress: (key: string) => void;
+  rejectedKey?: string | null;
   showAccentRow?: boolean;
 }
 
 export function OnScreenKeyboard({
   currentKey,
   onKeyPress,
+  rejectedKey = null,
   showAccentRow = false,
 }: OnScreenKeyboardProps) {
   const touchHandledKeyRef = useRef<string | null>(null);
@@ -31,7 +33,8 @@ export function OnScreenKeyboard({
       {rows.map((row, rowIndex) => (
         <div className="keyboard__row" key={rowIndex}>
           {row.map((key) => {
-            const isCurrent = key.value === currentKey;
+            const isRejected = key.value === rejectedKey;
+            const isCurrent = !rejectedKey && key.value === currentKey;
             const normalized = normalizeTouchKey(key.value);
             const ariaLabel =
               key.kind === "space" || key.kind === "backspace"
@@ -46,8 +49,8 @@ export function OnScreenKeyboard({
             return (
               <button
                 aria-label={ariaLabel}
-                aria-pressed={isCurrent}
-                className={`keyboard__key keyboard__key--${key.kind ?? "letter"}${isCurrent ? " keyboard__key--current" : ""}`}
+                aria-pressed={isCurrent || isRejected}
+                className={`keyboard__key keyboard__key--${key.kind ?? "letter"}${isCurrent ? " keyboard__key--current" : ""}${isRejected ? " keyboard__key--rejected" : ""}`}
                 draggable={false}
                 key={key.value}
                 onClick={() => {

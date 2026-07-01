@@ -50,6 +50,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
   );
   const [audioCue, setAudioCue] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [rejectedKey, setRejectedKey] = useState<string | null>(null);
   const canGoPrevious = currentItemIndex > 0;
   const canGoNext = currentItemIndex < ptPTStarterPack.items.length - 1;
 
@@ -71,10 +72,19 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
         setAudioCue(resolveAudioText(ptPTAudioManifest, cueEvent.audioId));
       }
 
-      const audioIds = audioEvents.map((event) => event.audioId);
-      audioQueueRef.current = audioQueueRef.current
-        .catch(() => undefined)
-        .then(() => playInSequence(service, audioIds));
+      const [firstAudioId, ...queuedAudioIds] = audioEvents.map(
+        (event) => event.audioId,
+      );
+      if (!firstAudioId) {
+        return;
+      }
+
+      const firstPlayback = service
+        .play(firstAudioId, { interrupt: true })
+        .catch(() => undefined);
+      audioQueueRef.current = firstPlayback.then(() =>
+        playInSequence(service, queuedAudioIds),
+      );
       void audioQueueRef.current;
     },
     [service],
@@ -87,6 +97,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       setLessonState(createLessonState(nextItem));
       setAudioCue(null);
       setFeedbackMessage(null);
+      setRejectedKey(null);
       restoreLearningFocus();
     },
     [restoreLearningFocus, setLessonState],
@@ -113,6 +124,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
     setLessonState(update.state);
     setFeedbackMessage(null);
     setAudioCue(null);
+    setRejectedKey(null);
     restoreLearningFocus();
   }, [currentItem, restoreLearningFocus, setLessonState]);
 
@@ -142,8 +154,10 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
           setFeedbackMessage(
             `Precisamos da letra ${displayKey(rejectedEvent.expected)}.`,
           );
+          setRejectedKey(rejectedEvent.actual);
         } else {
           setFeedbackMessage(null);
+          setRejectedKey(null);
         }
 
         playAudioEvents(update.events);
@@ -229,6 +243,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       onKeyPress={handleCanonicalInput}
       onPreviousLesson={handlePreviousLesson}
       onReplay={handleReplay}
+      rejectedKey={rejectedKey}
     />
   );
 }

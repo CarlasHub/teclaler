@@ -22,6 +22,7 @@ interface LessonScreenProps {
   onNextLesson: () => void;
   onPreviousLesson: () => void;
   onReplay: () => void;
+  rejectedKey: string | null;
 }
 
 export function LessonScreen({
@@ -39,6 +40,7 @@ export function LessonScreen({
   onNextLesson,
   onPreviousLesson,
   onReplay,
+  rejectedKey,
 }: LessonScreenProps) {
   const totalLetters = lessonState.targetSequence.length;
   const progressText = lessonState.completed
@@ -193,6 +195,7 @@ export function LessonScreen({
       <OnScreenKeyboard
         currentKey={currentKey}
         onKeyPress={onKeyPress}
+        rejectedKey={rejectedKey}
         showAccentRow={containsAccentKey(item.targetSequence)}
       />
     </main>

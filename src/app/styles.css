@@ -387,6 +387,15 @@ button:focus-visible,
     0 6px 14px rgb(16 38 83 / 10%);
 }
 
+.keyboard__key--rejected {
+  border-color: #c85252;
+  background: #fff3f3;
+  color: #7a3030;
+  box-shadow:
+    0 0 0 4px rgb(200 82 82 / 24%),
+    0 6px 14px rgb(16 38 83 / 10%);
+}
+
 .keyboard__key:hover {
   background: #f4f8ff;
 }
