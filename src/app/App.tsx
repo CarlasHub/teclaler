@@ -26,6 +26,9 @@ interface AppProps {
 }
 
 type AudioLessonEvent = Extract<LessonEvent, { audioId?: string }>;
+const AUDIO_VOLUME_STORAGE_KEY = "teclaler.audioVolume";
+const DEFAULT_AUDIO_VOLUME = 1;
+const MIN_AUDIO_VOLUME = 0.25;
 
 export function App({ audioService, initialItemId, progressStore }: AppProps) {
   const learningInputRef = useRef<HTMLElement | null>(null);
@@ -51,6 +54,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
   const [audioCue, setAudioCue] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [rejectedKey, setRejectedKey] = useState<string | null>(null);
+  const [audioVolume, setAudioVolume] = useState(loadAudioVolume);
   const canGoPrevious = currentItemIndex > 0;
   const canGoNext = currentItemIndex < ptPTStarterPack.items.length - 1;
 
@@ -80,15 +84,21 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       }
 
       const firstPlayback = service
-        .play(firstAudioId, { interrupt: true })
+        .play(firstAudioId, { interrupt: true, volume: audioVolume })
         .catch(() => undefined);
       audioQueueRef.current = firstPlayback.then(() =>
-        playInSequence(service, queuedAudioIds),
+        playInSequence(service, queuedAudioIds, audioVolume),
       );
       void audioQueueRef.current;
     },
-    [service],
+    [audioVolume, service],
   );
+
+  const handleAudioVolumeChange = useCallback((nextVolume: number) => {
+    const volume = normalizeAudioVolume(nextVolume);
+    setAudioVolume(volume);
+    saveAudioVolume(volume);
+  }, []);
 
   const selectLesson = useCallback(
     (nextIndex: number) => {
@@ -151,10 +161,13 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
           (event) => event.type === "KEY_REJECTED",
         );
         if (rejectedEvent?.type === "KEY_REJECTED") {
-          setFeedbackMessage(
-            `Precisamos da letra ${displayKey(rejectedEvent.expected)}.`,
-          );
+          const message = `Precisamos da letra ${displayKey(rejectedEvent.expected)}.`;
+          setFeedbackMessage(message);
           setRejectedKey(rejectedEvent.actual);
+          void service.speak(
+            { text: message, locale: currentItem.locale },
+            { interrupt: true, volume: audioVolume },
+          );
         } else {
           setFeedbackMessage(null);
           setRejectedKey(null);
@@ -168,9 +181,11 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
     [
       currentItem,
       handleBackspace,
+      audioVolume,
       playAudioEvents,
       progress,
       restoreLearningFocus,
+      service,
       setLessonState,
     ],
   );
@@ -179,10 +194,13 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
     if (currentItem.audio.word) {
       setAudioCue(resolveAudioText(ptPTAudioManifest, currentItem.audio.word));
       audioQueueRef.current = Promise.resolve();
-      void service.play(currentItem.audio.word, { interrupt: true });
+      void service.play(currentItem.audio.word, {
+        interrupt: true,
+        volume: audioVolume,
+      });
     }
     restoreLearningFocus();
-  }, [currentItem, restoreLearningFocus, service]);
+  }, [audioVolume, currentItem, restoreLearningFocus, service]);
 
   useEffect(() => {
     const audioIds = [
@@ -229,6 +247,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       canGoPrevious={canGoPrevious}
       currentKey={getCurrentTarget(lessonState)}
       feedbackMessage={feedbackMessage}
+      audioVolume={audioVolume}
       item={currentItem}
       learningInputRef={learningInputRef}
       lessonPosition={{
@@ -240,6 +259,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
         progressSnapshot.completedItems[currentItem.id] ?? 0
       }
       onNextLesson={handleNextLesson}
+      onAudioVolumeChange={handleAudioVolumeChange}
       onKeyPress={handleCanonicalInput}
       onPreviousLesson={handlePreviousLesson}
       onReplay={handleReplay}
@@ -272,8 +292,53 @@ function hasAudioId(
 async function playInSequence(
   audioService: AudioService,
   audioIds: string[],
+  volume: number,
 ): Promise<void> {
   for (const [index, audioId] of audioIds.entries()) {
-    await audioService.play(audioId, { interrupt: index === 0 });
+    await audioService.play(audioId, { interrupt: index === 0, volume });
+  }
+}
+
+function loadAudioVolume(): number {
+  const storage = getLocalStorage();
+  if (!storage) {
+    return DEFAULT_AUDIO_VOLUME;
+  }
+
+  const storedVolume = storage.getItem(AUDIO_VOLUME_STORAGE_KEY);
+  return normalizeAudioVolume(
+    storedVolume ? Number(storedVolume) : DEFAULT_AUDIO_VOLUME,
+  );
+}
+
+function saveAudioVolume(volume: number): void {
+  const storage = getLocalStorage();
+  if (!storage) {
+    return;
+  }
+
+  storage.setItem(
+    AUDIO_VOLUME_STORAGE_KEY,
+    String(normalizeAudioVolume(volume)),
+  );
+}
+
+function normalizeAudioVolume(volume: number): number {
+  if (!Number.isFinite(volume)) {
+    return DEFAULT_AUDIO_VOLUME;
+  }
+
+  return Math.min(1, Math.max(MIN_AUDIO_VOLUME, volume));
+}
+
+function getLocalStorage(): Storage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage ?? null;
+  } catch (_error) {
+    return null;
   }
 }

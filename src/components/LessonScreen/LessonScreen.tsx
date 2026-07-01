@@ -13,11 +13,13 @@ interface LessonScreenProps {
   lessonState: LessonState;
   currentKey: string | null;
   audioCue: string | null;
+  audioVolume: number;
   feedbackMessage: string | null;
   learningInputRef: Ref<HTMLElement>;
   localCompletionCount: number;
   canGoNext: boolean;
   canGoPrevious: boolean;
+  onAudioVolumeChange: (volume: number) => void;
   onKeyPress: (key: string) => void;
   onNextLesson: () => void;
   onPreviousLesson: () => void;
@@ -31,11 +33,13 @@ export function LessonScreen({
   lessonState,
   currentKey,
   audioCue,
+  audioVolume,
   feedbackMessage,
   learningInputRef,
   localCompletionCount,
   canGoNext,
   canGoPrevious,
+  onAudioVolumeChange,
   onKeyPress,
   onNextLesson,
   onPreviousLesson,
@@ -147,6 +151,21 @@ export function LessonScreen({
             <button className="replay-button" onClick={onReplay} type="button">
               Ouvir outra vez
             </button>
+            <label className="volume-control">
+              <span>Som</span>
+              <input
+                aria-label="Volume do som"
+                max="1"
+                min="0.25"
+                onChange={(event) =>
+                  onAudioVolumeChange(event.currentTarget.valueAsNumber)
+                }
+                step="0.05"
+                type="range"
+                value={audioVolume}
+              />
+              <strong>{Math.round(audioVolume * 100)}%</strong>
+            </label>
           </div>
 
           {feedbackMessage ? (

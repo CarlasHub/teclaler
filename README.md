@@ -85,6 +85,8 @@ npm test
 
 The current tests cover the pure lesson engine, Portuguese keyboard normalization, on-screen keyboard emission, curriculum/audio validation, structured starter lesson validation, every starter word through physical-keyboard-style input, and full lesson completion through both physical and on-screen keyboard input.
 
+The lesson screen includes a local `Som` volume control. It defaults to full volume, affects letter, syllable, word, replay, and spoken feedback audio, and stores only the selected level in the browser.
+
 ### Validate Content
 
 ```bash

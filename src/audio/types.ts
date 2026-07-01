@@ -23,8 +23,22 @@ export interface AudioManifest {
   assets: AudioManifestAsset[];
 }
 
+export interface AudioPlaybackOptions {
+  interrupt?: boolean;
+  volume?: number;
+}
+
+export interface SpokenAudioMessage {
+  text: string;
+  locale?: PortugueseLocale;
+}
+
 export interface AudioService {
-  play(audioId: string, options?: { interrupt?: boolean }): Promise<void>;
+  play(audioId: string, options?: AudioPlaybackOptions): Promise<void>;
   preload(audioIds: string[]): Promise<void>;
   replayLast(): Promise<void>;
+  speak(
+    message: SpokenAudioMessage,
+    options?: AudioPlaybackOptions,
+  ): Promise<void>;
 }

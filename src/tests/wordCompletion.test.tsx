@@ -63,6 +63,7 @@ describe("word completion flow", () => {
     fireEvent.keyDown(window, { key: "M" });
     expect(audioService.play).toHaveBeenCalledWith("pt-PT.letter.m", {
       interrupt: true,
+      volume: 1,
     });
 
     for (const key of ["A", "L", "A"]) {
@@ -143,11 +144,17 @@ describe("word completion flow", () => {
   });
 
   it("keeps wrong-key feedback gentle and does not advance", () => {
-    renderMalaApp(createFakeAudioService());
+    const audioService = createFakeAudioService();
+
+    renderMalaApp(audioService);
 
     fireEvent.keyDown(window, { key: "L" });
 
     expect(screen.getByText("Precisamos da letra M.")).toBeInTheDocument();
+    expect(audioService.speak).toHaveBeenCalledWith(
+      { text: "Precisamos da letra M.", locale: "pt-PT" },
+      { interrupt: true, volume: 1 },
+    );
     expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
     const expectedKey = screen.getByRole("button", { name: "Tecla M" });
     const pressedWrongKey = screen.getByRole("button", { name: "Tecla L" });
@@ -239,6 +246,33 @@ describe("word completion flow", () => {
       expect(audioService.played.at(-1)).toBe("pt-PT.word.mala"),
     );
     expect(audioService.replayed).toHaveLength(0);
+  });
+
+  it("provides a keyboard-accessible volume control that affects playback and spoken feedback", async () => {
+    const audioService = createFakeAudioService();
+
+    renderApp(audioService);
+
+    const volumeControl = screen.getByLabelText("Volume do som");
+    expect(volumeControl).toHaveAttribute("type", "range");
+    expect(volumeControl).toHaveValue("1");
+
+    fireEvent.change(volumeControl, { target: { value: "0.6" } });
+    expect(volumeControl).toHaveValue("0.6");
+
+    fireEvent.keyDown(window, { key: "C" });
+
+    expect(audioService.play).toHaveBeenCalledWith("pt-PT.letter.c", {
+      interrupt: true,
+      volume: 0.6,
+    });
+
+    fireEvent.keyDown(window, { key: "L" });
+
+    expect(audioService.speak).toHaveBeenCalledWith(
+      { text: "Precisamos da letra A.", locale: "pt-PT" },
+      { interrupt: true, volume: 0.6 },
+    );
   });
 
   it("restores learning focus after touch keyboard, replay, and navigation", async () => {
@@ -394,6 +428,8 @@ function renderApp(
   audioService: AudioService & { played: string[] },
   initialItemId?: string,
 ) {
+  window.localStorage?.removeItem("teclaler.audioVolume");
+
   return render(
     <App
       audioService={audioService}
@@ -406,19 +442,25 @@ function renderApp(
 function createFakeAudioService(): AudioService & {
   played: string[];
   replayed: string[];
+  spoken: string[];
 } {
   const played: string[] = [];
   const replayed: string[] = [];
+  const spoken: string[] = [];
 
   return {
     played,
     replayed,
+    spoken,
     play: vi.fn(async (audioId: string) => {
       played.push(audioId);
     }),
     preload: vi.fn(async () => undefined),
     replayLast: vi.fn(async () => {
       replayed.push("last");
+    }),
+    speak: vi.fn(async ({ text }: { text: string }) => {
+      spoken.push(text);
     }),
   };
 }

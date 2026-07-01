@@ -29,6 +29,8 @@ http://192.168.x.x:5173/
 - The current key remains clearly highlighted.
 - Wrong keys do not fill a box or advance the lesson.
 - Wrong-key feedback stays calm, for example `Precisamos da letra C.`
+- Wrong-key feedback is also spoken clearly.
+- The `Som` volume control starts at full volume and changes letter, syllable, word, replay, and spoken feedback volume.
 - `Apagar` and physical `Backspace` remove the most recent typed letter.
 - Deleting after completion returns the word to incomplete state.
 - Completing a word plays the full-word audio.
@@ -48,9 +50,11 @@ http://192.168.x.x:5173/
 | Complete `SAPO` using the physical keyboard. | Same learning loop works for `SAPO`. | |
 | Complete `BOLA` using the physical keyboard. | Completion shows `Lição completa`. | |
 | Press a wrong key before the first letter. | The box stays empty and calm feedback appears. | |
+| Listen to the wrong-key feedback. | The same message is heard clearly. | |
 | Use `Backspace` after partial input. | The most recent typed letter is removed and the current key moves back. | |
 | Use `Backspace` after completion. | `Palavra completa` disappears and the last letter can be retyped. | |
 | Press `Ouvir outra vez`. | The current full word audio plays. | |
+| Adjust `Som`, then press `Ouvir outra vez`. | The replay volume changes without affecting lesson state. | |
 | Check `Próxima palavra` before completion. | It is disabled. | |
 | Move forward, then press `Anterior`. | The previous word appears without confusing stale typed letters. | |
 
@@ -65,6 +69,7 @@ http://192.168.x.x:5173/
 | Use `Apagar` after partial input. | The previous letter is removed. | |
 | Use `Apagar` after completion. | Completion rolls back and the deleted letter can be retyped. | |
 | Press `Ouvir outra vez`. | Current word audio plays. | |
+| Adjust `Som`. | Audio level changes and the control is easy to use by touch. | |
 | Finish `BOLA`. | `Lição completa` appears calmly. | |
 
 ## C. iPad Safari Touch-Only Test
@@ -76,6 +81,7 @@ http://192.168.x.x:5173/
 | Complete all five words using touch only. | Every touch key advances only when correct and plays audio. | |
 | Use `Apagar`. | Rollback works and current-key highlight updates. | |
 | Press `Ouvir outra vez`. | Current word audio plays. | |
+| Adjust `Som`. | Audio stays clear at the selected level. | |
 | Move between words. | `Anterior` and `Próxima palavra` do not cause layout jumping or stale state. | |
 | Rotate the iPad if practical. | Layout remains usable without horizontal scrolling. | |
 
@@ -89,6 +95,7 @@ http://192.168.x.x:5173/
 | Press a wrong key. | Calm feedback appears and the lesson does not advance. | |
 | Press on-screen buttons, then type on the physical keyboard. | Focus is not lost; physical keyboard input still works. | |
 | Press `Ouvir outra vez`, then type. | Replay works and physical keyboard input still works afterwards. | |
+| Use the keyboard to focus and adjust `Som`. | The range control is keyboard-accessible and input still works afterwards. | |
 | Use `Próxima palavra` and `Anterior`, then type. | Navigation works and focus returns to the learning area. | |
 
 ## E. iPhone Safari If Practical
@@ -100,4 +107,5 @@ http://192.168.x.x:5173/
 | Complete at least `CASA` and `MALA`. | Touch input, audio, completion, and navigation work. | |
 | Use `Apagar`. | Rollback works. | |
 | Press `Ouvir outra vez`. | Current word audio plays. | |
+| Adjust `Som`. | The control remains usable at phone width. | |
 | Watch for accidental zoom or text selection. | Neither should happen during normal key taps. | |

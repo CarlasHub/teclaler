@@ -255,6 +255,37 @@ button:focus-visible,
   background: #eef6ff;
 }
 
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 2px solid #c8d9f7;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #294d83;
+  font-weight: 900;
+  box-shadow: 0 8px 24px rgb(42 85 152 / 8%);
+}
+
+.volume-control input {
+  width: clamp(120px, 18vw, 180px);
+  accent-color: #2a67c7;
+  cursor: pointer;
+}
+
+.volume-control input:focus-visible {
+  outline: 4px solid #8db7ff;
+  outline-offset: 4px;
+}
+
+.volume-control strong {
+  min-width: 44px;
+  color: #1f57aa;
+  text-align: right;
+}
+
 .gentle-feedback {
   margin: -4px 0 0;
   color: #385278;
@@ -545,8 +576,13 @@ button:focus-visible,
   }
 
   .audio-cue,
-  .replay-button {
+  .replay-button,
+  .volume-control {
     width: min(100%, 280px);
+  }
+
+  .volume-control {
+    justify-content: center;
   }
 }
 

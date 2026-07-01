@@ -8,9 +8,14 @@ type AudioContextConstructor = typeof AudioContext;
 
 export async function speakWithDevelopmentTts(
   asset: AudioManifestAsset | { text: string; locale?: string },
-  options: { interrupt?: boolean } = {},
+  options: { interrupt?: boolean; volume?: number } = {},
 ): Promise<void> {
   if (typeof window === "undefined") {
+    return;
+  }
+
+  const volume = normalizeVolume(options.volume);
+  if (volume === 0) {
     return;
   }
 
@@ -18,7 +23,7 @@ export async function speakWithDevelopmentTts(
     !("speechSynthesis" in window) ||
     !("SpeechSynthesisUtterance" in window)
   ) {
-    await playDevelopmentTone(asset);
+    await playDevelopmentTone(asset, volume);
     return;
   }
 
@@ -32,6 +37,7 @@ export async function speakWithDevelopmentTts(
     const utterance = new SpeechSynthesisUtterance(asset.text);
     utterance.lang = asset.locale ?? "pt-PT";
     utterance.rate = 0.86;
+    utterance.volume = volume;
     activeUtterances.add(utterance);
 
     let timeout: number;
@@ -50,11 +56,12 @@ export async function speakWithDevelopmentTts(
 
 async function playDevelopmentTone(
   asset: AudioManifestAsset | { text: string; locale?: string },
+  volume: number,
 ): Promise<void> {
   const frequency = getFallbackFrequency(asset);
   const AudioContextClass = getAudioContextClass();
   if (!AudioContextClass) {
-    await playHtmlAudioTone(frequency);
+    await playHtmlAudioTone(frequency, volume);
     return;
   }
 
@@ -67,7 +74,7 @@ async function playDevelopmentTone(
     oscillator.type = "sine";
     oscillator.frequency.value = frequency;
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.16 * volume, now + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + TONE_DURATION_SECONDS);
 
     oscillator.connect(gain);
@@ -82,7 +89,7 @@ async function playDevelopmentTone(
       };
     });
   } catch (_error) {
-    await playHtmlAudioTone(frequency);
+    await playHtmlAudioTone(frequency, volume);
   }
 }
 
@@ -113,12 +120,16 @@ function getFallbackFrequency(
   return 523;
 }
 
-async function playHtmlAudioTone(frequency: number): Promise<void> {
+async function playHtmlAudioTone(
+  frequency: number,
+  volume: number,
+): Promise<void> {
   if (!("Audio" in window)) {
     return;
   }
 
-  const audio = new Audio(createToneWavDataUri(frequency));
+  const audio = new Audio(createToneWavDataUri(frequency, volume));
+  audio.volume = volume;
   await new Promise<void>((resolve) => {
     audio.onended = () => resolve();
     audio.onerror = () => resolve();
@@ -126,7 +137,7 @@ async function playHtmlAudioTone(frequency: number): Promise<void> {
   });
 }
 
-function createToneWavDataUri(frequency: number): string {
+function createToneWavDataUri(frequency: number, volume: number): string {
   const sampleRate = 8000;
   const sampleCount = Math.floor(sampleRate * TONE_DURATION_SECONDS);
   const buffer = new ArrayBuffer(44 + sampleCount * 2);
@@ -151,7 +162,8 @@ function createToneWavDataUri(frequency: number): string {
     const envelope = Math.sin(Math.PI * progress);
     const sample =
       Math.sin((2 * Math.PI * frequency * index) / sampleRate) *
-      0.18 *
+      0.32 *
+      volume *
       envelope;
     view.setInt16(44 + index * 2, sample * 32767, true);
   }
@@ -169,4 +181,12 @@ function writeAscii(view: DataView, offset: number, value: string): void {
   for (let index = 0; index < value.length; index += 1) {
     view.setUint8(offset + index, value.charCodeAt(index));
   }
+}
+
+function normalizeVolume(volume: number | undefined): number {
+  if (typeof volume !== "number" || Number.isNaN(volume)) {
+    return 1;
+  }
+
+  return Math.min(1, Math.max(0, volume));
 }
