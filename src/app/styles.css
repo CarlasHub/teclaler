@@ -11,10 +11,19 @@
     sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -26,6 +35,9 @@ body {
 
 button {
   font: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 button:focus-visible,
@@ -37,11 +49,19 @@ button:focus-visible,
 .lesson-shell {
   display: grid;
   grid-template-rows: auto 1fr auto auto auto;
-  gap: 18px;
+  gap: clamp(12px, 2vw, 18px);
   width: min(1120px, 100%);
   min-height: 100vh;
+  min-height: 100svh;
   margin: 0 auto;
-  padding: 28px 28px 20px;
+  padding: clamp(14px, 2.5vw, 28px) clamp(12px, 2.5vw, 28px)
+    clamp(12px, 2vw, 20px);
+  overflow-x: hidden;
+  user-select: none;
+}
+
+.lesson-shell:focus {
+  outline: none;
 }
 
 .brand-header {
@@ -90,6 +110,7 @@ button:focus-visible,
   border-radius: 28px;
   background: rgb(255 255 255 / 88%);
   box-shadow: 0 18px 60px rgb(50 82 130 / 12%);
+  min-width: 0;
 }
 
 .lesson-stage--text-only {
@@ -113,6 +134,7 @@ button:focus-visible,
   display: grid;
   justify-items: center;
   gap: 20px;
+  min-width: 0;
 }
 
 .lesson-focus__label {
@@ -129,6 +151,8 @@ button:focus-visible,
   font-weight: 900;
   line-height: 0.86;
   letter-spacing: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .syllables {
@@ -159,6 +183,7 @@ button:focus-visible,
   justify-content: center;
   gap: 12px;
   max-width: 760px;
+  min-width: 0;
 }
 
 .typing-box {
@@ -309,41 +334,49 @@ button:focus-visible,
 
 .keyboard {
   display: grid;
-  gap: 10px;
-  padding: 18px;
+  gap: clamp(7px, 1.4vw, 10px);
+  padding: clamp(12px, 2vw, 18px);
   border-top: 1px solid #d7e4f7;
   background: rgb(239 246 255 / 82%);
+  user-select: none;
 }
 
 .keyboard__row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(48px, 1fr));
   justify-content: center;
-  gap: 10px;
+  gap: clamp(5px, 1.2vw, 10px);
+  width: min(100%, 780px);
+  margin: 0 auto;
 }
 
 .keyboard__key {
-  min-width: 62px;
+  min-width: 0;
   min-height: 58px;
+  padding: 0 8px;
   border: 2px solid #d5dfed;
   border-radius: 12px;
   background: #ffffff;
   color: #102653;
-  font-size: 1.45rem;
+  font-size: clamp(1.05rem, 2.6vw, 1.45rem);
   font-weight: 900;
   box-shadow: 0 6px 14px rgb(16 38 83 / 10%);
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .keyboard__key--space {
-  width: min(360px, 56vw);
+  grid-column: span 3;
+  min-width: 132px;
   color: #294d83;
-  font-size: 1.2rem;
+  font-size: clamp(1rem, 2.3vw, 1.2rem);
 }
 
 .keyboard__key--backspace {
-  min-width: 110px;
+  grid-column: span 2;
+  min-width: 104px;
   color: #294d83;
-  font-size: 1.1rem;
+  font-size: clamp(0.95rem, 2.1vw, 1.1rem);
 }
 
 .keyboard__key--current {
@@ -356,6 +389,26 @@ button:focus-visible,
 
 .keyboard__key:hover {
   background: #f4f8ff;
+}
+
+@media (max-width: 920px) {
+  .lesson-stage {
+    grid-template-columns: minmax(120px, 200px) 1fr;
+    gap: 20px;
+    padding: 26px;
+  }
+
+  .meaning-visual {
+    min-height: 170px;
+  }
+
+  .meaning-visual img {
+    width: min(100%, 210px);
+  }
+
+  .lesson-status {
+    grid-template-columns: auto minmax(140px, 1fr) auto;
+  }
 }
 
 @media (max-width: 760px) {
@@ -406,28 +459,85 @@ button:focus-visible,
   }
 
   .keyboard {
-    padding: 12px 4px;
+    padding: 12px 6px;
   }
 
   .keyboard__row {
-    gap: 5px;
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    gap: 6px;
   }
 
   .keyboard__key {
-    min-width: 0;
-    width: 9vw;
     min-height: 48px;
     border-radius: 10px;
     font-size: 1.1rem;
   }
 
   .keyboard__key--space {
-    width: 52vw;
+    min-width: 120px;
   }
 
   .keyboard__key--backspace {
-    width: 22vw;
+    min-width: 96px;
     font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand-header {
+    gap: 12px;
+  }
+
+  .brand-header h1 {
+    font-size: 2.15rem;
+  }
+
+  .brand-header p {
+    font-size: 1rem;
+  }
+
+  .locale-pill {
+    min-width: 62px;
+    padding: 8px 10px;
+  }
+
+  .lesson-stage {
+    padding: 16px 12px;
+  }
+
+  .meaning-visual {
+    min-height: 96px;
+  }
+
+  .meaning-visual img {
+    width: min(48vw, 150px);
+  }
+
+  .lesson-focus {
+    gap: 14px;
+  }
+
+  .target-word {
+    font-size: clamp(3.25rem, 18vw, 4.5rem);
+  }
+
+  .syllables {
+    gap: 22px;
+    font-size: clamp(1.9rem, 11vw, 2.8rem);
+  }
+
+  .typing-box {
+    width: clamp(52px, 18vw, 68px);
+    border-radius: 12px;
+  }
+
+  .cue-row {
+    width: 100%;
+  }
+
+  .audio-cue,
+  .replay-button {
+    width: min(100%, 280px);
   }
 }
 

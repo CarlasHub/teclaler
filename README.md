@@ -125,3 +125,7 @@ npm run dev
 7. After completing a word, pressing `Enter` on a hardware keyboard advances to the next word.
 
 The iPad test should confirm that the target word stays visible, the current key is highlighted, wrong keys do not advance, `Ouvir outra vez` remains available, and no account, analytics, ads, external links, cloud sync, or microphone permission appears.
+
+### Hardware Test Plan
+
+Use `docs/testing/HARDWARE_TEST_PLAN.md` for manual device checks across desktop physical keyboard, Android Chrome touch, iPad Safari touch, iPad Safari with a physical keyboard, and iPhone Safari when practical. This is a device-readiness checklist, not a release or publishing plan.

@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import type { CurriculumItem } from "../../curriculum/types";
 import { containsAccentKey, displayKey } from "../../engine/inputEngine";
 import type { LessonState } from "../../engine/lessonEngine";
@@ -13,6 +14,7 @@ interface LessonScreenProps {
   currentKey: string | null;
   audioCue: string | null;
   feedbackMessage: string | null;
+  learningInputRef: Ref<HTMLElement>;
   localCompletionCount: number;
   canGoNext: boolean;
   canGoPrevious: boolean;
@@ -29,6 +31,7 @@ export function LessonScreen({
   currentKey,
   audioCue,
   feedbackMessage,
+  learningInputRef,
   localCompletionCount,
   canGoNext,
   canGoPrevious,
@@ -55,7 +58,14 @@ export function LessonScreen({
     item.imageId === "image.house.simple" ? "/images/house-simple.svg" : null;
 
   return (
-    <main className="lesson-shell" aria-labelledby="app-title">
+    <main
+      aria-label="Área de aprendizagem"
+      aria-labelledby="app-title"
+      className="lesson-shell"
+      data-testid="learning-input-area"
+      ref={learningInputRef}
+      tabIndex={-1}
+    >
       <header className="brand-header">
         <div>
           <h1 id="app-title">

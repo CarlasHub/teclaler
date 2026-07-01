@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { OnScreenKeyboard } from "../components/OnScreenKeyboard";
@@ -63,6 +63,19 @@ describe("on-screen Portuguese keyboard", () => {
     await user.click(cCedilha);
 
     expect(onKeyPress).toHaveBeenCalledWith("ç");
+  });
+
+  it("does not duplicate touch input when a touch pointer is followed by click", () => {
+    const onKeyPress = vi.fn();
+
+    render(<OnScreenKeyboard currentKey="c" onKeyPress={onKeyPress} />);
+
+    const cKey = screen.getByRole("button", { name: "Tecla C" });
+    fireEvent.pointerDown(cKey, { pointerType: "touch" });
+    fireEvent.click(cKey);
+
+    expect(onKeyPress).toHaveBeenCalledTimes(1);
+    expect(onKeyPress).toHaveBeenCalledWith("c");
   });
 
   it("shows accent keys only when the lesson needs them", async () => {

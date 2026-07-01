@@ -5,6 +5,7 @@ export interface KeyboardEventLike {
   altKey?: boolean;
   ctrlKey?: boolean;
   metaKey?: boolean;
+  shiftKey?: boolean;
 }
 
 export interface KeyboardKey {

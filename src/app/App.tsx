@@ -28,6 +28,7 @@ interface AppProps {
 type AudioLessonEvent = Extract<LessonEvent, { audioId?: string }>;
 
 export function App({ audioService, initialItemId, progressStore }: AppProps) {
+  const learningInputRef = useRef<HTMLElement | null>(null);
   const service = useMemo(
     () => audioService ?? createBrowserAudioService(ptPTAudioManifest),
     [audioService],
@@ -52,6 +53,10 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
   const canGoPrevious = currentItemIndex > 0;
   const canGoNext = currentItemIndex < ptPTStarterPack.items.length - 1;
 
+  const restoreLearningFocus = useCallback(() => {
+    learningInputRef.current?.focus({ preventScroll: true });
+  }, []);
+
   const setLessonState = useCallback((nextState: typeof lessonState) => {
     lessonStateRef.current = nextState;
     setLessonStateValue(nextState);
@@ -75,32 +80,41 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
     [service],
   );
 
-  const selectLesson = useCallback((nextIndex: number) => {
-    const nextItem = ptPTStarterPack.items[nextIndex];
-    setCurrentItemIndex(nextIndex);
-    setLessonState(createLessonState(nextItem));
-    setAudioCue(null);
-    setFeedbackMessage(null);
-  }, []);
+  const selectLesson = useCallback(
+    (nextIndex: number) => {
+      const nextItem = ptPTStarterPack.items[nextIndex];
+      setCurrentItemIndex(nextIndex);
+      setLessonState(createLessonState(nextItem));
+      setAudioCue(null);
+      setFeedbackMessage(null);
+      restoreLearningFocus();
+    },
+    [restoreLearningFocus, setLessonState],
+  );
 
   const handleNextLesson = useCallback(() => {
     if (canGoNext && lessonStateRef.current.completed) {
       selectLesson(currentItemIndex + 1);
+    } else {
+      restoreLearningFocus();
     }
-  }, [canGoNext, currentItemIndex, selectLesson]);
+  }, [canGoNext, currentItemIndex, restoreLearningFocus, selectLesson]);
 
   const handlePreviousLesson = useCallback(() => {
     if (canGoPrevious) {
       selectLesson(currentItemIndex - 1);
+    } else {
+      restoreLearningFocus();
     }
-  }, [canGoPrevious, currentItemIndex, selectLesson]);
+  }, [canGoPrevious, currentItemIndex, restoreLearningFocus, selectLesson]);
 
   const handleBackspace = useCallback(() => {
     const update = processLessonBackspace(currentItem, lessonStateRef.current);
     setLessonState(update.state);
     setFeedbackMessage(null);
     setAudioCue(null);
-  }, [currentItem, setLessonState]);
+    restoreLearningFocus();
+  }, [currentItem, restoreLearningFocus, setLessonState]);
 
   const handleCanonicalInput = useCallback(
     (key: string) => {
@@ -134,8 +148,17 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
 
         playAudioEvents(update.events);
       }
+
+      restoreLearningFocus();
     },
-    [currentItem, handleBackspace, playAudioEvents, progress, setLessonState],
+    [
+      currentItem,
+      handleBackspace,
+      playAudioEvents,
+      progress,
+      restoreLearningFocus,
+      setLessonState,
+    ],
   );
 
   const handleReplay = useCallback(() => {
@@ -144,7 +167,8 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       audioQueueRef.current = Promise.resolve();
       void service.play(currentItem.audio.word, { interrupt: true });
     }
-  }, [currentItem, service]);
+    restoreLearningFocus();
+  }, [currentItem, restoreLearningFocus, service]);
 
   useEffect(() => {
     const audioIds = [
@@ -180,6 +204,10 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [canGoNext, handleCanonicalInput, handleNextLesson]);
 
+  useEffect(() => {
+    restoreLearningFocus();
+  }, [restoreLearningFocus]);
+
   return (
     <LessonScreen
       audioCue={audioCue}
@@ -188,6 +216,7 @@ export function App({ audioService, initialItemId, progressStore }: AppProps) {
       currentKey={getCurrentTarget(lessonState)}
       feedbackMessage={feedbackMessage}
       item={currentItem}
+      learningInputRef={learningInputRef}
       lessonPosition={{
         current: currentItemIndex + 1,
         total: ptPTStarterPack.items.length,

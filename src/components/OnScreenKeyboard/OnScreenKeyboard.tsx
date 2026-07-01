@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   PORTUGUESE_ACCENT_KEYS,
   PORTUGUESE_KEYBOARD_ROWS,
@@ -16,6 +17,7 @@ export function OnScreenKeyboard({
   onKeyPress,
   showAccentRow = false,
 }: OnScreenKeyboardProps) {
+  const touchHandledKeyRef = useRef<string | null>(null);
   const rows = showAccentRow
     ? [
         ...PORTUGUESE_KEYBOARD_ROWS.slice(0, 3),
@@ -35,17 +37,39 @@ export function OnScreenKeyboard({
               key.kind === "space" || key.kind === "backspace"
                 ? key.label
                 : `Tecla ${displayKey(key.value)}`;
+            const emitKey = () => {
+              if (normalized) {
+                onKeyPress(normalized);
+              }
+            };
 
             return (
               <button
                 aria-label={ariaLabel}
                 aria-pressed={isCurrent}
                 className={`keyboard__key keyboard__key--${key.kind ?? "letter"}${isCurrent ? " keyboard__key--current" : ""}`}
+                draggable={false}
                 key={key.value}
                 onClick={() => {
-                  if (normalized) {
-                    onKeyPress(normalized);
+                  if (touchHandledKeyRef.current === key.value) {
+                    touchHandledKeyRef.current = null;
+                    return;
                   }
+
+                  emitKey();
+                }}
+                onPointerDown={(event) => {
+                  if (
+                    event.pointerType === "touch" ||
+                    event.pointerType === "pen"
+                  ) {
+                    event.preventDefault();
+                    touchHandledKeyRef.current = key.value;
+                    emitKey();
+                    return;
+                  }
+
+                  touchHandledKeyRef.current = null;
                 }}
                 type="button"
               >

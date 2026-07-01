@@ -41,6 +41,20 @@ describe("word completion flow", () => {
     expect(screen.getByText("LA")).toBeInTheDocument();
   });
 
+  it("renders the responsive learning hierarchy without child-facing links", () => {
+    renderApp(createFakeAudioService());
+
+    expect(screen.getByTestId("learning-input-area")).toBeInTheDocument();
+    expect(screen.getByLabelText("Lição atual")).toBeInTheDocument();
+    expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
+    expect(screen.getByLabelText("Sílabas ca sa")).toBeInTheDocument();
+    expect(screen.getByLabelText("Letras da palavra CASA")).toBeInTheDocument();
+    expect(screen.getByLabelText("Progresso da lição")).toBeInTheDocument();
+    expect(screen.getByLabelText("Navegação da lição")).toBeInTheDocument();
+    expect(screen.getByLabelText("Teclado português")).toBeInTheDocument();
+    expect(document.querySelectorAll("a")).toHaveLength(0);
+  });
+
   it("completes MALA with the physical keyboard and plays every key plus word audio", async () => {
     const audioService = createFakeAudioService();
 
@@ -70,6 +84,38 @@ describe("word completion flow", () => {
     expect(
       audioService.played.filter((id) => id === "pt-PT.letter.l"),
     ).toHaveLength(1);
+  });
+
+  it("ignores modifier and system keys, then accepts lowercase physical input", async () => {
+    const audioService = createFakeAudioService();
+
+    renderApp(audioService);
+
+    for (const event of [
+      { key: "Shift" },
+      { key: "Control" },
+      { key: "Alt" },
+      { key: "Meta" },
+      { key: "Tab" },
+      { key: "Escape" },
+      { key: "CapsLock" },
+      { key: "ArrowLeft" },
+      { key: "c", metaKey: true },
+      { key: "c", ctrlKey: true },
+      { key: "c", altKey: true },
+    ]) {
+      fireEvent.keyDown(window, event);
+    }
+
+    expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
+    expect(screen.queryByText("Precisamos da letra C.")).toBeNull();
+
+    fireEvent.keyDown(window, { key: "c" });
+
+    expect(screen.getByLabelText("Letra 1 de 4, C")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(audioService.played).toContain("pt-PT.letter.c"),
+    );
   });
 
   it("completes MALA with the on-screen keyboard through the same input path", async () => {
@@ -186,6 +232,44 @@ describe("word completion flow", () => {
       expect(audioService.played.at(-1)).toBe("pt-PT.word.mala"),
     );
     expect(audioService.replayed).toHaveLength(0);
+  });
+
+  it("restores learning focus after touch keyboard, replay, and navigation", async () => {
+    const user = userEvent.setup();
+    const audioService = createFakeAudioService();
+
+    renderApp(audioService);
+
+    const learningArea = screen.getByTestId("learning-input-area");
+    expect(document.activeElement).toBe(learningArea);
+
+    await user.click(screen.getByRole("button", { name: "Tecla C" }));
+    expect(document.activeElement).toBe(learningArea);
+
+    fireEvent.keyDown(window, { key: "a" });
+    expect(screen.getByLabelText("Letra 2 de 4, A")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Ouvir outra vez" }));
+    expect(document.activeElement).toBe(learningArea);
+    await waitFor(() =>
+      expect(audioService.played.at(-1)).toBe("pt-PT.word.casa"),
+    );
+
+    for (const key of ["S", "A"]) {
+      fireEvent.keyDown(window, { key });
+    }
+
+    await waitFor(() =>
+      expect(screen.getByText("Palavra completa")).toBeInTheDocument(),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Próxima palavra" }));
+    expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+    expect(document.activeElement).toBe(learningArea);
+
+    await user.click(screen.getByRole("button", { name: "Anterior" }));
+    expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
+    expect(document.activeElement).toBe(learningArea);
   });
 
   it("completes every starter word with the physical keyboard", async () => {
