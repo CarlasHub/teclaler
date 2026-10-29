@@ -361,13 +361,20 @@ test("the full touch keyboard and typing area stay visible across screen sizes",
     }
     expect(key!.width, JSON.stringify(viewport)).toBeGreaterThanOrEqual(44);
     expect(key!.height, JSON.stringify(viewport)).toBeGreaterThanOrEqual(44);
-    for (const bounds of [target!, boxes!, hear!]) {
+    for (const [name, bounds] of [
+      ["target", target!],
+      ["typing boxes", boxes!],
+      ["hear button", hear!],
+    ] as const) {
       const overlap =
         bounds.x < keyboard!.x + keyboard!.width &&
         bounds.x + bounds.width > keyboard!.x &&
         bounds.y < keyboard!.y + keyboard!.height &&
         bounds.y + bounds.height > keyboard!.y;
-      expect(overlap, JSON.stringify(viewport)).toBe(false);
+      expect(
+        overlap,
+        JSON.stringify({ viewport, name, bounds, keyboard }),
+      ).toBe(false);
     }
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
