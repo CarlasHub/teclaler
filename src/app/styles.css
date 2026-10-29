@@ -1602,15 +1602,19 @@ button:focus-visible,
   }
 
   .meaning-visual {
-    min-height: 64px;
+    min-height: 48px;
   }
 
   .meaning-visual img {
-    width: min(23vw, 70px);
+    width: min(18vw, 52px);
   }
 
   .lesson-focus {
     gap: 5px;
+  }
+
+  .word-navigation__button {
+    min-height: 44px;
   }
 }
 

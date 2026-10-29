@@ -22,13 +22,19 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-      - run: npm run validate:content
-      - run: npm run build
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run qa
         env:
-          VITE_BASE_PATH: /teclaler/
+          QA_ALL_BROWSERS: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-report
+          path: |
+            .qa
+            test-results
+            playwright-report
+          if-no-files-found: ignore
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

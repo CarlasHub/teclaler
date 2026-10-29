@@ -27,14 +27,11 @@ Open `http://localhost:5173/`. For the Windows app, see [Windows setup](docs/WIN
 ## Check a change
 
 ```powershell
-npm test
-npm run test:e2e
-npm run validate:content
-npm run build
+npm run qa
 npm audit
 ```
 
-`test:e2e` uses the installed Edge browser on Windows. On Linux CI, the Pages workflow installs Chromium. `validate:content -- --release` intentionally fails until all child-facing audio is reviewed and approved in the manifest.
+`qa` checks unit behaviour, curriculum/audio, the Pages build, browser accessibility and touch layouts, and offline use. It writes a short pass/fail report to `.qa/report.json`. It uses the installed Edge browser on Windows; pull requests and Pages deployment also test WebKit. See [QA checks](docs/QA.md) for the scope and limits. `validate:content -- --release` intentionally fails until all child-facing audio is reviewed and approved in the manifest.
 
 ## Keyboard use
 
