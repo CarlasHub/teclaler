@@ -37,6 +37,8 @@ interface LessonScreenProps {
   onPreviousLesson: () => void;
   onLessonLocaleChange: (locale: LessonLocale) => void;
   onReplay: () => void;
+  onHome: () => void;
+  onNextStage?: () => void;
   pressedKey: string | null;
   lessonLocale: LessonLocale;
   replayDisabled: boolean;
@@ -68,6 +70,8 @@ export function LessonScreen({
   onPreviousLesson,
   onLessonLocaleChange,
   onReplay,
+  onHome,
+  onNextStage,
   pressedKey,
   lessonLocale,
   replayDisabled,
@@ -142,6 +146,13 @@ export function LessonScreen({
             <p>{copy.tagline}</p>
           </div>
           <div className="brand-header__actions">
+            <button
+              className="lesson-home-button"
+              onClick={onHome}
+              type="button"
+            >
+              <span aria-hidden="true">←</span> {copy.home}
+            </button>
             <label className="language-selector">
               <span className="visually-hidden">
                 {copy.lessonLanguageLabel}
@@ -466,6 +477,29 @@ export function LessonScreen({
         </p>
       </section>
 
+      {lessonCompleted ? (
+        <section className="stage-finish" aria-labelledby="stage-finish-title">
+          <div>
+            <h2 id="stage-finish-title">{copy.stageCompleteTitle}</h2>
+            <p>{copy.stageCompleteBody}</p>
+          </div>
+          <div className="stage-finish__actions">
+            <button onClick={onHome} type="button">
+              {copy.backToStages}
+            </button>
+            {onNextStage ? (
+              <button
+                className="stage-finish__primary"
+                onClick={onNextStage}
+                type="button"
+              >
+                {copy.nextStage}
+              </button>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
       <nav className="lesson-nav" aria-label={copy.lessonNavigationLabel}>
         <button
           className="lesson-nav__button"
@@ -553,6 +587,8 @@ function getLessonCopy(locale: LessonLocale) {
   if (locale === "en-GB") {
     return {
       audioCueLabel: "You hear",
+      backToStages: "Choose a stage",
+      home: "Stages",
       close: "Close",
       completions: (count: number) => `${count} completions`,
       currentLessonLabel: "Current lesson",
@@ -573,6 +609,7 @@ function getLessonCopy(locale: LessonLocale) {
       localMode: "Local mode",
       localProgress: (progress: string) => `On this device: ${progress}`,
       nextWord: "Next word",
+      nextStage: "Next stage",
       oneCompletion: "1 completion",
       previous: "Previous",
       privacyNote: "No accounts, no cloud. Saved only on this device.",
@@ -582,6 +619,9 @@ function getLessonCopy(locale: LessonLocale) {
       replayDisabled: "Type one letter to listen again.",
       replayEnabled: (text: string) => `Will play ${text}.`,
       settings: "Settings",
+      stageCompleteTitle: "Stage complete!",
+      stageCompleteBody:
+        "You put every word together. Come back to practise whenever you like.",
       sound: "Sound",
       soundVolume: "Sound volume",
       syllablesLabel: "Word parts",
@@ -598,6 +638,8 @@ function getLessonCopy(locale: LessonLocale) {
 
   return {
     audioCueLabel: "Ouves",
+    backToStages: "Escolher etapa",
+    home: "Etapas",
     close: "Fechar",
     completions: (count: number) => `${count} conclusões`,
     currentLessonLabel: "Lição atual",
@@ -618,6 +660,7 @@ function getLessonCopy(locale: LessonLocale) {
     localMode: "Modo local",
     localProgress: (progress: string) => `Neste dispositivo: ${progress}`,
     nextWord: "Próxima palavra",
+    nextStage: "Etapa seguinte",
     oneCompletion: "1 conclusão",
     previous: "Anterior",
     privacyNote: "Sem contas, sem nuvem. Guardado só neste dispositivo.",
@@ -626,6 +669,9 @@ function getLessonCopy(locale: LessonLocale) {
     replayDisabled: "Escreve uma letra para ouvir outra vez.",
     replayEnabled: (text: string) => `Vai ouvir ${text}.`,
     settings: "Definições",
+    stageCompleteTitle: "Etapa concluída!",
+    stageCompleteBody:
+      "Juntaste todas as palavras. Podes voltar para praticar quando quiseres.",
     sound: "Som",
     soundVolume: "Volume do som",
     syllablesLabel: "Sílabas",

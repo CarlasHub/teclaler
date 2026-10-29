@@ -5,6 +5,7 @@ import { audioManifestsByLocale } from "../audio/manifest";
 import { hasBrowserAudioOutputSupport } from "../audio/ttsFallback";
 import type { AudioService } from "../audio/types";
 import { LessonScreen } from "../components/LessonScreen";
+import { HomeScreen, type HomeStage } from "../components/HomeScreen";
 import {
   curriculumPacksByLocale,
   supportedLessonLocales,
@@ -31,6 +32,7 @@ interface AppProps {
   initialItemId?: string;
   initialLocale?: LessonLocale;
   progressStore?: ProgressStore;
+  initialView?: "home" | "lesson";
 }
 
 type AudioLessonEvent = Extract<LessonEvent, { audioId?: string }>;
@@ -46,8 +48,12 @@ export function App({
   initialItemId,
   initialLocale,
   progressStore,
+  initialView,
 }: AppProps) {
   const learningInputRef = useRef<HTMLElement | null>(null);
+  const [view, setView] = useState<"home" | "lesson">(
+    () => initialView ?? (initialItemId ? "lesson" : "home"),
+  );
   const [selectedLocale, setSelectedLocale] = useState<LessonLocale>(
     () => initialLocale ?? loadPreferredLessonLocale(),
   );
@@ -181,6 +187,7 @@ export function App({
         loadLastItemId("pt-PT", nextStage),
         nextPack,
       );
+      saveLastItemId("pt-PT", nextStage, nextPack.items[nextIndex].id);
       setSelectedStage(nextStage);
       setCurrentItemIndex(nextIndex);
       setLessonState(createLessonState(nextPack.items[nextIndex]));
@@ -191,6 +198,25 @@ export function App({
       restoreLearningFocus();
     },
     [restoreLearningFocus, selectedLocale, setLessonState],
+  );
+
+  const handleStartStage = useCallback(
+    (stage: number) => {
+      if (selectedLocale === "pt-PT") {
+        handleStageChange(stage);
+      } else {
+        const nextPack = getStagePack(selectedLocale, 1);
+        const nextIndex = getInitialItemIndex(
+          loadLastItemId(selectedLocale, 1),
+          nextPack,
+        );
+        saveLastItemId(selectedLocale, 1, nextPack.items[nextIndex].id);
+        setCurrentItemIndex(nextIndex);
+        setLessonState(createLessonState(nextPack.items[nextIndex]));
+      }
+      setView("lesson");
+    },
+    [handleStageChange, selectedLocale, setLessonState],
   );
 
   const handleLessonLocaleChange = useCallback(
@@ -346,6 +372,7 @@ export function App({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (view !== "lesson") return;
       if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       if (shouldLetFocusedControlHandleKey(event)) {
         return;
@@ -372,11 +399,60 @@ export function App({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canGoNext, handleCanonicalInput, handleNextLesson]);
+  }, [canGoNext, handleCanonicalInput, handleNextLesson, view]);
 
   useEffect(() => {
-    restoreLearningFocus();
-  }, [restoreLearningFocus]);
+    if (view === "lesson") restoreLearningFocus();
+  }, [restoreLearningFocus, view]);
+
+  const homeStages: HomeStage[] =
+    selectedLocale === "pt-PT"
+      ? ptPTStages.map((stage) => {
+          const items = getStagePack("pt-PT", stage.id).items;
+          return {
+            ...stage,
+            total: items.length,
+            completed: items.filter(
+              (item) => (progressSnapshot.completedItems[item.id] ?? 0) > 0,
+            ).length,
+            examples: items.slice(0, 3).map((item) => item.displayText),
+          };
+        })
+      : [
+          {
+            id: 1,
+            title:
+              selectedLocale === "en-GB" ? "First words" : "Primeiras palavras",
+            description:
+              selectedLocale === "en-GB"
+                ? "Learn with pictures and sounds"
+                : "Aprende com imagens e sons",
+            total: currentPack.items.length,
+            completed: currentPack.items.filter(
+              (item) => (progressSnapshot.completedItems[item.id] ?? 0) > 0,
+            ).length,
+            examples: currentPack.items
+              .slice(0, 3)
+              .map((item) => item.displayText),
+          },
+        ];
+
+  if (view === "home") {
+    return (
+      <HomeScreen
+        locale={selectedLocale}
+        stages={homeStages}
+        selectedStage={selectedStage}
+        resumeWord={
+          loadLastItemId(selectedLocale, selectedStage)
+            ? currentItem.displayText
+            : null
+        }
+        onLocaleChange={handleLessonLocaleChange}
+        onStartStage={handleStartStage}
+      />
+    );
+  }
 
   return (
     <LessonScreen
@@ -411,6 +487,12 @@ export function App({
       onPreviousLesson={handlePreviousLesson}
       onLessonLocaleChange={handleLessonLocaleChange}
       onReplay={handleReplay}
+      onHome={() => setView("home")}
+      onNextStage={
+        selectedLocale === "pt-PT" && selectedStage < 4
+          ? () => handleStartStage(selectedStage + 1)
+          : undefined
+      }
       pressedKey={pressedKey}
       lessonLocale={selectedLocale}
       replayDisabled={replayTarget.disabled}

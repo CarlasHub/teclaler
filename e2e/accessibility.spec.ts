@@ -5,6 +5,7 @@ test("physical keyboard completes a word and settings keep focus inside the dial
   page,
 }) => {
   await page.goto("/");
+  await page.getByRole("button", { name: "Começar a aprender" }).click();
   const learningArea = page.getByTestId("learning-input-area");
   await expect(learningArea).toBeFocused();
 
@@ -14,6 +15,8 @@ test("physical keyboard completes a word and settings keep focus inside the dial
   await expect(page.getByLabel("Palavra alvo MALA")).toBeVisible();
   await expect(learningArea).toBeFocused();
 
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Etapas" })).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("combobox", { name: "Idioma da lição" }),
@@ -35,10 +38,39 @@ test("physical keyboard completes a word and settings keep focus inside the dial
   await expect(settings).toBeFocused();
 });
 
+test("the home journey is operable with Tab and Enter", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("main")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("combobox", { name: "Idioma da lição" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Começar a aprender" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: /Etapa 2 Sílabas simples/ }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByLabel("Palavra alvo MESA")).toBeVisible();
+  await page.getByRole("button", { name: "Etapas" }).click();
+  await expect(
+    page.getByRole("button", { name: "Continuar em MESA" }),
+  ).toBeVisible();
+});
+
 test("lesson and settings have no automated WCAG A/AA violations", async ({
   page,
 }) => {
   await page.goto("/");
+  const home = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(home.violations).toEqual([]);
+  await page.getByRole("button", { name: "Começar a aprender" }).click();
   const lesson = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
@@ -61,6 +93,7 @@ test("compact desktop keeps the target and accent keyboard in view", async ({
     localStorage.setItem("teclaler.lastItem.pt-PT.3", "word-leão-pt-pt");
   });
   await page.reload();
+  await page.getByRole("button", { name: "Continuar em LEÃO" }).click();
   await expect(page.getByLabel("Palavra alvo LEÃO")).toBeInViewport();
   const accentKey = page.getByRole("button", { name: "Tecla Ã" });
   await expect(accentKey).toBeInViewport();

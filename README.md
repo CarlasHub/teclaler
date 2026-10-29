@@ -11,6 +11,7 @@ TeclaLer helps children practise reading and typing. A child sees a word, types 
 - European Portuguese: 56 original words across four stages, from image-supported starter words to short words, accents and digraphs. The 51 added practice words and their locally generated pt-PT recordings are drafts requiring educator and pronunciation review before a child pilot.
 - Brazilian Portuguese and British English: separate five-word starter lessons with their own audio IDs.
 - Physical and on-screen keyboard input; visible focus; keyboard-operable language, stage, sound and settings controls; local resume and progress.
+- A home screen lets a child resume the last word or choose any stage. Each stage shows its word count, examples and progress on this device.
 - A versioned offline web cache; the Windows app embeds the same lessons and audio locally.
 
 ## Run locally
@@ -36,6 +37,7 @@ npm audit
 
 ## Keyboard use
 
+- On the home screen, choose a language and start or resume a stage. Use the **Etapas** button to return there from a lesson.
 - Type the visible word with the physical keyboard or use the on-screen keys.
 - `Backspace` removes the last typed letter. `Enter` advances after a completed word.
 - `Tab` reaches every control. `Enter` or `Space` activates buttons; arrow keys operate native selectors and sound controls.
