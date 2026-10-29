@@ -4,6 +4,8 @@
 
 - Unit tests exercise physical and on-screen typing, focus return, stage changes, local resume, modal keyboard blocking and Escape.
 - Real Edge browser tests exercise a full word with the physical keyboard, Tab order, modal focus, Shift+Tab, Escape, and the visible completion action at narrow mobile sizes.
+- Browser tests check 12 viewport sizes, including narrow phones and iPad-sized portrait and landscape layouts. They check that the target, typing position and touch keyboard remain visible together, that touch keys are large enough, that accent keys fit, and that opening a lesson resets scroll.
+- Pull requests and Pages deployment run the browser tests in Chromium and WebKit. A production-build test checks the Pages path, the self-contained app entry, offline reload, cached audio and moving to the next word.
 - axe-core checks the lesson and settings for automated WCAG 2.0, 2.1 and 2.2 A/AA violations. Automated checks are useful but do not prove screen-reader usability.
 - The layout has visible focus, a 44 px minimum on-screen key height at compact desktop sizes, and a reduced-motion rule.
 
