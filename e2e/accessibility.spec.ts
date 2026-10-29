@@ -31,7 +31,11 @@ test("physical keyboard completes a word and settings keep focus inside the dial
   await expect(page.getByLabel("Letra 1 de 4, vazia")).toBeVisible();
   await page.keyboard.press("Shift+Tab");
   await expect(
-    page.getByRole("radio", { name: "British English" }),
+    page.getByRole("slider", { name: "Volume do som" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(
+    page.getByRole("radio", { name: "Português europeu" }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -303,4 +307,121 @@ test("word arrows and typing area work across iPad layouts", async ({
       localStorage.removeItem("teclaler.lastItem.pt-PT.1"),
     );
   }
+});
+
+test("the full touch keyboard and typing area stay visible across screen sizes", async ({
+  page,
+}) => {
+  const viewports = [
+    { width: 320, height: 568 },
+    { width: 375, height: 667 },
+    { width: 390, height: 844 },
+    { width: 430, height: 932 },
+    { width: 600, height: 820 },
+    { width: 768, height: 1024 },
+    { width: 820, height: 1180 },
+    { width: 844, height: 390 },
+    { width: 1024, height: 600 },
+    { width: 1180, height: 820 },
+    { width: 1366, height: 768 },
+    { width: 1920, height: 1080 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: /Começar a aprender|Continuar em CASA/ })
+      .click();
+    const target = await page.getByLabel("Palavra alvo CASA").boundingBox();
+    const boxes = await page
+      .getByRole("list", { name: "Letras da palavra CASA" })
+      .boundingBox();
+    const keyboard = await page
+      .getByRole("region", { name: "Teclado português" })
+      .boundingBox();
+    const key = await page
+      .getByRole("button", { name: "Tecla Q" })
+      .boundingBox();
+    const hear = await page
+      .getByRole("button", { name: "Ouvir palavra" })
+      .boundingBox();
+    for (const bounds of [target, boxes, keyboard, key, hear]) {
+      expect(bounds, JSON.stringify(viewport)).not.toBeNull();
+      expect(bounds!.x, JSON.stringify(viewport)).toBeGreaterThanOrEqual(0);
+      expect(bounds!.y, JSON.stringify(viewport)).toBeGreaterThanOrEqual(0);
+      expect(
+        bounds!.x + bounds!.width,
+        JSON.stringify(viewport),
+      ).toBeLessThanOrEqual(viewport.width + 1);
+      expect(
+        bounds!.y + bounds!.height,
+        JSON.stringify(viewport),
+      ).toBeLessThanOrEqual(viewport.height + 1);
+    }
+    expect(key!.width, JSON.stringify(viewport)).toBeGreaterThanOrEqual(44);
+    expect(key!.height, JSON.stringify(viewport)).toBeGreaterThanOrEqual(44);
+    for (const bounds of [target!, boxes!, hear!]) {
+      const overlap =
+        bounds.x < keyboard!.x + keyboard!.width &&
+        bounds.x + bounds.width > keyboard!.x &&
+        bounds.y < keyboard!.y + keyboard!.height &&
+        bounds.y + bounds.height > keyboard!.y;
+      expect(overlap, JSON.stringify(viewport)).toBe(false);
+    }
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+      JSON.stringify(viewport),
+    ).toBeLessThanOrEqual(viewport.width);
+    await page.evaluate(() =>
+      localStorage.removeItem("teclaler.lastItem.pt-PT.1"),
+    );
+  }
+});
+
+test("stage cards reset scroll and accent keys fit a small screen", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: /Etapa 3 Acentos e sons nasais/ })
+    .click();
+  await page
+    .getByRole("button", { name: "Palavra seguinte sem concluir esta" })
+    .click();
+  const target = await page.getByLabel("Palavra alvo LEÃO").boundingBox();
+  const boxes = await page
+    .getByRole("list", { name: "Letras da palavra LEÃO" })
+    .boundingBox();
+  const keyboard = await page
+    .getByRole("region", { name: "Teclado português" })
+    .boundingBox();
+  await expect(page.getByRole("button", { name: "Tecla Ã" })).toBeInViewport();
+  expect(target!.y).toBeGreaterThanOrEqual(0);
+  expect(boxes!.y + boxes!.height).toBeLessThan(keyboard!.y);
+  expect(await page.evaluate(() => scrollY)).toBe(0);
+});
+
+test("touch keys finish a word and keep the keyboard visible for the next word", async ({
+  browser,
+}) => {
+  const context = await browser.newContext({
+    hasTouch: true,
+    viewport: { width: 390, height: 844 },
+  });
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.getByRole("button", { name: "Começar a aprender" }).tap();
+  for (const letter of ["C", "A", "S", "A"]) {
+    await page.getByRole("button", { name: `Tecla ${letter}` }).tap();
+  }
+  const next = page.getByRole("button", { name: "Próxima palavra" });
+  await expect(next).toBeFocused();
+  await expect(next).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Tecla C" })).toBeDisabled();
+  await next.tap();
+  await expect(page.getByLabel("Palavra alvo MALA")).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Tecla C" })).toBeEnabled();
+  await context.close();
 });

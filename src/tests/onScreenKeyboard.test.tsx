@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { createRef } from "react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { OnScreenKeyboard } from "../components/OnScreenKeyboard";
@@ -141,6 +142,35 @@ describe("on-screen Portuguese keyboard", () => {
     expect(screen.getByRole("button", { name: "Apagar" })).toBeEnabled();
   });
 
+  it("keeps the keys visible but disabled after completion and offers the next action", async () => {
+    const user = userEvent.setup();
+    const onKeyPress = vi.fn();
+    const onContinue = vi.fn();
+    render(
+      <OnScreenKeyboard
+        onKeyPress={onKeyPress}
+        completionAction={{
+          label: "Próxima palavra",
+          onClick: onContinue,
+          descriptionId: "completion-message",
+          buttonRef: createRef<HTMLButtonElement>(),
+          hearAgainLabel: "Ouvir de novo",
+          onHearAgain: vi.fn(),
+          hearAgainShortLabel: "Ouvir",
+          restartLabel: "Recomeçar palavra",
+          onRestart: vi.fn(),
+          restartShortLabel: "Recomeçar",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Tecla C" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Espaço" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Próxima palavra" }));
+    expect(onContinue).toHaveBeenCalledOnce();
+    expect(onKeyPress).not.toHaveBeenCalled();
+  });
+
   it("supports Space and Enter activation for keyboard-only users", async () => {
     const user = userEvent.setup();
     const onKeyPress = vi.fn();
@@ -189,5 +219,18 @@ describe("on-screen Portuguese keyboard", () => {
     await user.click(aTilde);
 
     expect(onKeyPress).toHaveBeenCalledWith("ã");
+  });
+
+  it("keeps the required accent reachable without crowding a small keyboard", () => {
+    render(
+      <OnScreenKeyboard
+        onKeyPress={vi.fn()}
+        showAccentRow
+        accentKeys={["ã"]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Tecla Ã" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Tecla Á" })).toBeNull();
   });
 });

@@ -41,7 +41,9 @@ npm audit
 - On the home screen, choose a language and start or resume a stage. Use the **Etapas** button to return there from a lesson.
 - Use **Ouvir palavra** to hear the full word at any time. Type the visible word with the physical keyboard or use the on-screen keys.
 - Use **Recomeçar palavra** to clear your current attempt. The arrows beside the word move to the previous or next word. Moving forward before finishing skips that word without marking it complete.
-- After completing a word, the on-screen keys become a clear **Próxima palavra** action; `Enter`, `Space` or a click activates it. At the end of a stage, the action leads to the next stage or to any unfinished words.
+- The on-screen keyboard stays visible while typing and after a word is complete. Completed words leave the letter keys inactive and put **Próxima palavra**, **Ouvir** and **Recomeçar** on its action row. `Enter`, `Space`, touch or a click activates the focused next action. At the end of a stage, it leads to the next stage or unfinished words.
+- On narrow screens the keyboard uses larger touch keys and the stage choice stays on the home screen via **Etapas**. The page returns to the top when a new word or stage opens.
+- **Definições** contains the sound volume control; the lesson keeps a compact row for hearing, replaying and restarting the word.
 - `Backspace` removes the last typed letter. `Enter` advances after a completed word.
 - `Tab` reaches every control. `Enter` or `Space` activates buttons; arrow keys operate native selectors and sound controls.
 - Settings keeps focus inside the dialog. `Escape` closes it and returns focus to the settings button.
