@@ -46,6 +46,7 @@ interface LessonScreenProps {
   onRestartWord: () => void;
   onSkipWord: () => void;
   onHome: () => void;
+  onOpenPhonics: () => void;
   onNextStage?: () => void;
   onReviewUnfinished: () => void;
   pressedKey: string | null;
@@ -84,6 +85,7 @@ export function LessonScreen({
   onRestartWord,
   onSkipWord,
   onHome,
+  onOpenPhonics,
   onNextStage,
   onReviewUnfinished,
   pressedKey,
@@ -391,6 +393,14 @@ export function LessonScreen({
                     <strong>{Math.round(audioVolume * 100)}%</strong>
                   </label>
                 </section>
+
+                <button
+                  className="settings-phonics-button"
+                  onClick={onOpenPhonics}
+                  type="button"
+                >
+                  <span aria-hidden="true">♫</span> {copy.practiceSounds}
+                </button>
 
                 <section className="settings-section">
                   <label className="auto-advance-control">
@@ -765,6 +775,7 @@ function getLessonCopy(locale: LessonLocale) {
       progressCount: (current: number, total: number) =>
         `${current} of ${total}`,
       replay: "Listen again",
+      practiceSounds: "Practise this word's sounds",
       replayDisabled: "Type one letter to listen again.",
       replayEnabled: (text: string) => `Will play ${text}.`,
       settings: "Settings",
@@ -835,6 +846,7 @@ function getLessonCopy(locale: LessonLocale) {
     privacyNote: "Sem contas, sem nuvem. Guardado só neste dispositivo.",
     progressCount: (current: number, total: number) => `${current} de ${total}`,
     replay: "Ouvir outra vez",
+    practiceSounds: "Treinar os sons desta palavra",
     replayDisabled: "Escreve uma letra para ouvir outra vez.",
     replayEnabled: (text: string) => `Vai ouvir ${text}.`,
     settings: "Definições",
