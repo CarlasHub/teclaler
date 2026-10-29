@@ -125,6 +125,12 @@ describe("word completion flow", () => {
       );
     }
 
+    fireEvent.keyDown(settingsDialog, { key: "Escape" });
+
+    expect(
+      screen.queryByRole("dialog", { name: "Definições" }),
+    ).not.toBeInTheDocument();
+
     fireEvent.keyDown(window, { key: "C" });
 
     expect(screen.getByRole("button", { name: "Tecla C" })).toHaveAttribute(
@@ -145,12 +151,6 @@ describe("word completion flow", () => {
       { text: "Precisamos da letra A.", locale: "pt-BR" },
       { interrupt: true, volume: 1 },
     );
-
-    fireEvent.keyDown(settingsDialog, { key: "Escape" });
-
-    expect(
-      screen.queryByRole("dialog", { name: "Definições" }),
-    ).not.toBeInTheDocument();
   });
 
   it("switches to the English starter lesson with English keyboard and audio events", async () => {
@@ -612,6 +612,67 @@ describe("word completion flow", () => {
     await user.click(screen.getByRole("button", { name: "Anterior" }));
     expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
     expect(document.activeElement).toBe(learningArea);
+  });
+
+  it("switches pt-PT stages from the keyboard and starts the selected word", async () => {
+    const user = userEvent.setup();
+    renderApp(createFakeAudioService());
+
+    const stageSelect = screen.getByRole("combobox", {
+      name: "Etapa de aprendizagem",
+    });
+    stageSelect.focus();
+    await user.selectOptions(stageSelect, "2");
+
+    expect(screen.getByLabelText("Palavra alvo MESA")).toBeInTheDocument();
+    expect(screen.getByLabelText("Lição atual")).toHaveClass(
+      "lesson-stage--text-only",
+    );
+    expect(document.activeElement).toBe(
+      screen.getByTestId("learning-input-area"),
+    );
+    fireEvent.keyDown(window, { key: "m" });
+    expect(screen.getByLabelText("Letra 1 de 4, M")).toBeInTheDocument();
+  });
+
+  it("resumes the selected stage and word on this device", async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    const firstVisit = render(<App audioService={createFakeAudioService()} />);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Etapa de aprendizagem" }),
+      "2",
+    );
+    for (const key of ["m", "e", "s", "a"]) {
+      fireEvent.keyDown(window, { key });
+    }
+    await user.click(screen.getByRole("button", { name: "Próxima palavra" }));
+    expect(screen.getByLabelText("Palavra alvo LATA")).toBeInTheDocument();
+    firstVisit.unmount();
+
+    render(<App audioService={createFakeAudioService()} />);
+    expect(
+      screen.getByRole("combobox", { name: "Etapa de aprendizagem" }),
+    ).toHaveValue("2");
+    expect(screen.getByLabelText("Palavra alvo LATA")).toBeInTheDocument();
+    window.localStorage.clear();
+  });
+
+  it("keeps typing behind settings paused and restores focus on Escape", async () => {
+    const user = userEvent.setup();
+    renderApp(createFakeAudioService());
+    const settingsButton = screen.getByRole("button", { name: "Definições" });
+    await user.click(settingsButton);
+    const dialog = screen.getByRole("dialog", { name: "Definições" });
+    expect(document.activeElement).toBe(dialog);
+    fireEvent.keyDown(window, { key: "c" });
+    expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
+    fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(
+      Array.from(dialog.querySelectorAll("button, input, select")).at(-1),
+    );
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => expect(document.activeElement).toBe(settingsButton));
   });
 
   it("completes every starter word with the physical keyboard", async () => {
