@@ -31,11 +31,13 @@ test("physical keyboard completes a word and settings keep focus inside the dial
   await expect(page.getByLabel("Letra 1 de 4, vazia")).toBeVisible();
   await page.keyboard.press("Shift+Tab");
   await expect(
-    page.getByRole("slider", { name: "Volume do som" }),
+    page.getByRole("checkbox", {
+      name: "Mostrar a palavra seguinte automaticamente",
+    }),
   ).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(
-    page.getByRole("radio", { name: "Português europeu" }),
+    page.getByRole("slider", { name: "Volume do som" }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -154,6 +156,32 @@ test("completing a word exposes a focused next action on narrow screens", async 
       localStorage.removeItem("teclaler.lastItem.pt-PT.1"),
     );
   }
+});
+
+test("a completed word advances by itself after audio and keeps the next controls", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Começar a aprender" }).click();
+  for (const key of ["C", "A", "S", "A"]) {
+    await page.getByRole("button", { name: `Tecla ${key}` }).click();
+  }
+  await expect(page.getByLabel("Palavra alvo MALA")).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(
+    page.getByRole("button", { name: "Ouvir palavra" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Recomeçar palavra" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Palavra anterior" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("region", { name: "Teclado português" }),
+  ).toBeInViewport();
 });
 
 test("finishing the starter stage exposes the next stage action", async ({

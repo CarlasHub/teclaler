@@ -137,6 +137,72 @@ describe("word completion flow", () => {
     expect(screen.getByText("Palavra 2 de 5: MALA.")).toBeInTheDocument();
   });
 
+  it("waits for the completed word audio before showing the next word automatically", async () => {
+    const audioService = createFakeAudioService();
+    const originalPlay = audioService.play;
+    let finishWordAudio = () => undefined;
+    const wordAudioFinished = new Promise<void>((resolve) => {
+      finishWordAudio = resolve;
+    });
+    audioService.play = vi.fn(
+      async (...args: Parameters<AudioService["play"]>) => {
+        await originalPlay(...args);
+        if (args[0] === "pt-PT.word.casa") await wordAudioFinished;
+      },
+    );
+    renderApp(audioService);
+
+    for (const key of ["C", "A", "S", "A"]) {
+      fireEvent.keyDown(window, { key });
+    }
+    await waitFor(() =>
+      expect(audioService.play).toHaveBeenCalledWith("pt-PT.word.casa", {
+        interrupt: false,
+        volume: 1,
+      }),
+    );
+    expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Próxima palavra" }),
+    ).toBeEnabled();
+
+    finishWordAudio();
+    await waitFor(
+      () =>
+        expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument(),
+      { timeout: 4000 },
+    );
+    expect(screen.getByRole("button", { name: "Ouvir palavra" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Recomeçar palavra" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Palavra anterior" }),
+    ).toBeEnabled();
+    expect(screen.getByLabelText("Teclado português")).toBeInTheDocument();
+  });
+
+  it("can pause automatic advancement in settings", async () => {
+    const user = userEvent.setup();
+    renderApp(createFakeAudioService());
+    await user.click(screen.getByRole("button", { name: "Definições" }));
+    const autoAdvance = screen.getByRole("checkbox", {
+      name: "Mostrar a palavra seguinte automaticamente",
+    });
+    expect(autoAdvance).toBeChecked();
+    await user.click(autoAdvance);
+    expect(autoAdvance).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Fechar" }));
+    for (const key of ["C", "A", "S", "A"]) {
+      fireEvent.keyDown(window, { key });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1700));
+    expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Próxima palavra" }));
+    expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+    window.localStorage.removeItem("teclaler.autoAdvance");
+  });
+
   it("resumes at the next unfinished word after returning home", async () => {
     const user = userEvent.setup();
     window.localStorage.clear();
@@ -1000,6 +1066,7 @@ function renderApp(
   options: RenderAppOptions = {},
 ) {
   window.localStorage?.removeItem("teclaler.audioVolume");
+  window.localStorage?.removeItem("teclaler.autoAdvance");
   window.localStorage?.removeItem("teclaler.portugueseLocale");
   window.localStorage?.removeItem("teclaler.lessonLocale");
 

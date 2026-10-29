@@ -644,6 +644,27 @@ button:focus-visible,
   line-height: 1.2;
 }
 
+.auto-advance-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 2px solid #dce7f6;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #102653;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.auto-advance-control input {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  accent-color: #2a67c7;
+}
+
 .settings-section__value {
   display: inline-grid;
   place-items: center;
