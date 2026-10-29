@@ -64,6 +64,17 @@ describe("local audio playback", () => {
     await expect(second).resolves.toBeUndefined();
   });
 
+  it("stops the active clip through the public service API", async () => {
+    vi.stubGlobal("Audio", FakeAudio);
+    const service = createBrowserAudioService(manifest);
+    const playback = service.play("pt-PT.word.casa").catch((error) => error);
+
+    service.stop?.();
+
+    expect(await playback).toMatchObject({ name: "AbortError" });
+    expect(FakeAudio.instances[0]).toMatchObject({ currentTime: 0 });
+  });
+
   it("reports a failed local clip when no speech fallback exists", async () => {
     class BrokenAudio extends FakeAudio {
       play() {

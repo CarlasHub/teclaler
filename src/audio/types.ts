@@ -37,6 +37,7 @@ export interface AudioService {
   play(audioId: string, options?: AudioPlaybackOptions): Promise<void>;
   preload(audioIds: string[]): Promise<void>;
   replayLast(): Promise<void>;
+  stop?(): void;
   speak(
     message: SpokenAudioMessage,
     options?: AudioPlaybackOptions,

@@ -1,8 +1,14 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { App } from "../app/App";
-import type { AudioService } from "../audio/types";
+import type { AudioPlaybackOptions, AudioService } from "../audio/types";
 import { ptPTStarterPack } from "../curriculum/ptPTPack";
 import type { CurriculumItem, LessonLocale } from "../curriculum/types";
 import type { LessonEvent } from "../engine/events";
@@ -164,9 +170,12 @@ describe("word completion flow", () => {
     expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Próxima palavra" }),
-    ).toBeEnabled();
+    ).toBeDisabled();
 
-    finishWordAudio();
+    await act(async () => {
+      finishWordAudio();
+      await wordAudioFinished;
+    });
     await waitFor(
       () =>
         expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument(),
@@ -180,6 +189,66 @@ describe("word completion flow", () => {
       screen.getByRole("button", { name: "Palavra anterior" }),
     ).toBeEnabled();
     expect(screen.getByLabelText("Teclado português")).toBeInTheDocument();
+  });
+
+  it("plays rapid progress audio in order before enabling the next word", async () => {
+    const user = userEvent.setup();
+    const audioService = createDeferredAudioService();
+
+    renderApp(audioService);
+
+    for (const key of ["C", "A", "S", "A"]) {
+      fireEvent.keyDown(window, { key });
+    }
+
+    const nextButton = screen.getByRole("button", {
+      name: "Próxima palavra",
+    });
+    expect(screen.getByText("Palavra completa")).toBeInTheDocument();
+    expect(nextButton).toBeDisabled();
+    await waitFor(() =>
+      expect(audioService.played).toEqual(["pt-PT.letter.c"]),
+    );
+
+    const expectedAudio = [
+      "pt-PT.letter.c",
+      "pt-PT.letter.a",
+      "pt-PT.syllable.ca",
+      "pt-PT.letter.s",
+      "pt-PT.letter.a",
+      "pt-PT.syllable.sa",
+      "pt-PT.word.casa",
+    ];
+
+    for (
+      let expectedCount = 2;
+      expectedCount <= expectedAudio.length;
+      expectedCount += 1
+    ) {
+      await resolveNextAudio(audioService);
+      await waitFor(() =>
+        expect(audioService.played).toEqual(
+          expectedAudio.slice(0, expectedCount),
+        ),
+      );
+      expect(nextButton).toBeDisabled();
+    }
+
+    expect(
+      audioService.playOptions.map((options) => options.interrupt),
+    ).toEqual([true, false, false, false, false, false, false]);
+
+    await resolveNextAudio(audioService);
+
+    await waitFor(() => expect(nextButton).toBeEnabled());
+    await waitFor(() => expect(document.activeElement).toBe(nextButton));
+
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+    expect(document.activeElement).toBe(
+      screen.getByTestId("learning-input-area"),
+    );
   });
 
   it("can pause automatic advancement in settings", async () => {
@@ -1105,6 +1174,47 @@ function createFakeAudioService(): AudioService & {
       spoken.push(text);
     }),
   };
+}
+
+interface DeferredAudioService extends AudioService {
+  pending: Array<{ audioId: string; resolve: () => void }>;
+  playOptions: AudioPlaybackOptions[];
+  played: string[];
+}
+
+function createDeferredAudioService(): DeferredAudioService {
+  const pending: DeferredAudioService["pending"] = [];
+  const playOptions: AudioPlaybackOptions[] = [];
+  const played: string[] = [];
+
+  return {
+    pending,
+    playOptions,
+    played,
+    play: vi.fn((audioId: string, options: AudioPlaybackOptions = {}) => {
+      played.push(audioId);
+      playOptions.push(options);
+      return new Promise<void>((resolve) => {
+        pending.push({ audioId, resolve });
+      });
+    }),
+    preload: vi.fn(async () => undefined),
+    replayLast: vi.fn(async () => undefined),
+    speak: vi.fn(async () => undefined),
+    stop: vi.fn(),
+  };
+}
+
+async function resolveNextAudio(
+  audioService: DeferredAudioService,
+): Promise<void> {
+  const next = audioService.pending.shift();
+  expect(next).toBeDefined();
+
+  await act(async () => {
+    next?.resolve();
+    await Promise.resolve();
+  });
 }
 
 function createMemoryProgressStore(): ProgressStore {

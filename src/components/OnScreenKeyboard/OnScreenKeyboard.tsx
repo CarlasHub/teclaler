@@ -19,6 +19,7 @@ interface OnScreenKeyboardProps {
     label: string;
     onClick: () => void;
     descriptionId: string;
+    disabled?: boolean;
     buttonRef: Ref<HTMLButtonElement>;
     hearAgainLabel: string;
     onHearAgain: () => void;
@@ -64,6 +65,7 @@ export function OnScreenKeyboard({
               <button
                 aria-describedby={completionAction.descriptionId}
                 className="keyboard__continue"
+                disabled={completionAction.disabled}
                 onClick={completionAction.onClick}
                 ref={completionAction.buttonRef}
                 type="button"

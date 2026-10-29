@@ -32,8 +32,8 @@ flowchart TB
 ```ts
 interface CurriculumItem {
   id: string;
-  type: 'letter' | 'syllable' | 'word' | 'sentence';
-  locale: 'pt-PT' | 'pt-BR' | 'en-GB';
+  type: "letter" | "syllable" | "word" | "sentence";
+  locale: "pt-PT" | "pt-BR" | "en-GB";
   text: string;
   displayText: string;
   syllables?: string[];
@@ -49,7 +49,14 @@ interface CurriculumItem {
   imageAsset?: string;
   imageAlt?: string;
   difficulty: number;
-  status: 'draft' | 'pedagogy_review' | 'pronunciation_review' | 'ready_for_dev' | 'ready_for_release' | 'released' | 'retired';
+  status:
+    | "draft"
+    | "pedagogy_review"
+    | "pronunciation_review"
+    | "ready_for_dev"
+    | "ready_for_release"
+    | "released"
+    | "retired";
 }
 ```
 
@@ -59,23 +66,36 @@ Pure TypeScript. No React dependency. It accepts canonical input and emits seman
 
 ```ts
 type LessonEvent =
-  | { type: 'KEY_ACCEPTED'; char: string; audioId?: string }
-  | { type: 'KEY_REJECTED'; expected: string; actual: string }
-  | { type: 'SYLLABLE_COMPLETED'; syllable: string; audioId?: string }
-  | { type: 'WORD_COMPLETED'; itemId: string; audioId?: string };
+  | { type: "KEY_ACCEPTED"; char: string; audioId?: string }
+  | { type: "KEY_REJECTED"; expected: string; actual: string }
+  | { type: "SYLLABLE_COMPLETED"; syllable: string; audioId?: string }
+  | { type: "WORD_COMPLETED"; itemId: string; audioId?: string };
 ```
 
 ## Audio service
 
 ```ts
 interface AudioService {
-  play(audioId: string, options?: { interrupt?: boolean }): Promise<void>;
+  play(
+    audioId: string,
+    options?: { interrupt?: boolean; volume?: number },
+  ): Promise<void>;
   preload(audioIds: string[]): Promise<void>;
   replayLast(): Promise<void>;
+  stop?(): void;
+  speak(
+    message: { text: string; locale?: LessonLocale },
+    options?: { interrupt?: boolean; volume?: number },
+  ): Promise<void>;
 }
 ```
 
 Production uses audio files. Development may use Web Speech API fallback.
+
+The app queues semantic audio events across rapid accepted input so a letter,
+newly completed syllable, and newly completed word are heard in lesson order.
+Correction, replay, or navigation may cancel that queue. Completion navigation
+stays disabled until the final queued word recording finishes.
 
 ## Lesson locales and Portuguese variants
 

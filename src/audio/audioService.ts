@@ -1,5 +1,9 @@
 import { resolveAudioAsset } from "./audioManifest";
-import { prepareDevelopmentTts, speakWithDevelopmentTts } from "./ttsFallback";
+import {
+  cancelDevelopmentTts,
+  prepareDevelopmentTts,
+  speakWithDevelopmentTts,
+} from "./ttsFallback";
 import { resolvePublicAssetPath } from "../platform/publicPath";
 import type {
   AudioManifest,
@@ -23,6 +27,19 @@ export function createBrowserAudioService(
   let lastAudioId: string | null = null;
   let currentAudio: HTMLAudioElement | null = null;
 
+  function stop(): void {
+    if (currentAudio) {
+      currentAudio.pause();
+      try {
+        currentAudio.currentTime = 0;
+      } catch {
+        // Some browser audio implementations reject seeking before metadata loads.
+      }
+      currentAudio = null;
+    }
+    cancelDevelopmentTts();
+  }
+
   async function play(
     audioId: string,
     options: AudioPlaybackOptions = {},
@@ -32,8 +49,7 @@ export function createBrowserAudioService(
     const volume = normalizeVolume(options.volume);
 
     if (options.interrupt) {
-      currentAudio?.pause();
-      currentAudio = null;
+      stop();
     }
 
     if (!asset) {
@@ -99,8 +115,7 @@ export function createBrowserAudioService(
     const volume = normalizeVolume(options.volume);
     const locale = message.locale ?? manifest.locale;
     if (options.interrupt) {
-      currentAudio?.pause();
-      currentAudio = null;
+      stop();
     }
     const localSpeechAsset = resolveLocalSpeechAsset(
       manifest,
@@ -140,6 +155,7 @@ export function createBrowserAudioService(
     play,
     preload,
     replayLast,
+    stop,
     speak,
   };
 }

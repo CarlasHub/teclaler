@@ -28,6 +28,7 @@ interface LessonScreenProps {
   completedWordCount: number;
   audioCue: string | null;
   audioUnavailable: boolean;
+  completionAudioPlaying: boolean;
   audioVolume: number;
   autoAdvanceEnabled: boolean;
   feedbackMessage: string | null;
@@ -67,6 +68,7 @@ export function LessonScreen({
   completedWordCount,
   audioCue,
   audioUnavailable,
+  completionAudioPlaying,
   audioVolume,
   autoAdvanceEnabled,
   feedbackMessage,
@@ -151,10 +153,10 @@ export function LessonScreen({
   }, [settingsOpen]);
 
   useEffect(() => {
-    if (lessonState.completed) {
+    if (lessonState.completed && !completionAudioPlaying) {
       completionActionRef.current?.focus({ preventScroll: true });
     }
-  }, [item.id, lessonState.completed]);
+  }, [completionAudioPlaying, item.id, lessonState.completed]);
 
   const closeSettings = () => {
     setSettingsOpen(false);
@@ -418,7 +420,8 @@ export function LessonScreen({
                 <p className="settings-privacy-note">{copy.privacyNote}</p>
                 {lessonLocale !== "en-GB" ? (
                   <p className="settings-privacy-note">
-                    Voz Dii © TigreGotico Lda · CC BY-NC-ND 4.0 · uso não comercial.
+                    Voz Dii © TigreGotico Lda · CC BY-NC-ND 4.0 · uso não
+                    comercial.
                   </p>
                 ) : null}
                 <section
@@ -483,7 +486,10 @@ export function LessonScreen({
                 lessonState.completed ? copy.nextWordArrow : copy.skipToNextWord
               }
               className="word-navigation__button word-navigation__button--next"
-              disabled={!hasNextWord}
+              disabled={
+                !hasNextWord ||
+                (lessonState.completed && completionAudioPlaying)
+              }
               onClick={lessonState.completed ? onNextLesson : onSkipWord}
               type="button"
             >
@@ -657,6 +663,7 @@ export function LessonScreen({
                 label: completionActionText,
                 onClick: completionAction,
                 descriptionId: "completion-message",
+                disabled: completionAudioPlaying,
                 buttonRef: completionActionRef,
                 hearAgainLabel: copy.hearAgain,
                 onHearAgain: onHearWord,
@@ -793,7 +800,8 @@ function getLessonCopy(locale: LessonLocale) {
       tagline: "Listen. Read. Type.",
       targetWordLabel: "Target word",
       variantPrefix: "Lesson language",
-      voiceUnavailable: "Sound is unavailable. Check the device volume and try again.",
+      voiceUnavailable:
+        "Sound is unavailable. Check the device volume and try again.",
       wordComplete: "Word complete",
       wordLabel: "Word",
       wordPosition: (current: number, total: number) =>
@@ -864,7 +872,8 @@ function getLessonCopy(locale: LessonLocale) {
     tagline: "Ouve. Lê. Escreve.",
     targetWordLabel: "Palavra alvo",
     variantPrefix: "Variante portuguesa",
-    voiceUnavailable: "O som não está disponível. Verifica o volume e tenta outra vez.",
+    voiceUnavailable:
+      "O som não está disponível. Verifica o volume e tenta outra vez.",
     wordComplete: "Palavra completa",
     wordLabel: "Palavra",
     wordPosition: (current: number, total: number) =>
