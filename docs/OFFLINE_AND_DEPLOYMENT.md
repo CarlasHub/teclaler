@@ -1,6 +1,6 @@
 # Web deployment and offline behavior
 
-The GitHub Pages workflow tests and validates the app, builds it with `VITE_BASE_PATH=/teclaler/`, then publishes `dist` from `main` using GitHub Actions. The live site is [carlashub.github.io/teclaler](https://carlashub.github.io/teclaler/).
+The GitHub Pages workflow tests and validates the app, builds it with `VITE_BASE_PATH=/teclaler/`, then publishes `dist` from `main` using GitHub Actions. The live site is [carlashub.github.io/teclaler](https://carlashub.github.io/teclaler/). The build inlines the app script and stylesheet into `index.html`. This keeps a cached entry page usable after a new deployment removes older hashed assets. A plain HTML loading message remains visible if JavaScript fails to start.
 
 `npm run build` inserts every built file into the service worker's versioned precache list. This includes the three locale audio libraries, images, app code and manifest. A completed first visit installs the offline cache. Navigation requests try the network first and fall back to the cached app entry page. Other static requests use the cache first. A new build changes the cache version and replaces only TeclaLer's old caches.
 
