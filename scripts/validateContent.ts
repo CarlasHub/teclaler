@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   audioManifestsByLocale,
@@ -156,7 +156,22 @@ function validateLocalImageFile(
   );
 
   if (existsSync(localPublicPath)) {
-    return [];
+    const svg = readFileSync(localPublicPath, "utf8");
+    if (
+      /<svg\b/iu.test(svg) &&
+      /<\/svg>/iu.test(svg) &&
+      !/<script\b/iu.test(svg)
+    ) {
+      return [];
+    }
+    return [
+      {
+        code: "invalid_image_file",
+        itemId,
+        message: `${itemId} references an invalid or unsafe SVG ${imageAsset}`,
+        scope,
+      },
+    ];
   }
 
   return [

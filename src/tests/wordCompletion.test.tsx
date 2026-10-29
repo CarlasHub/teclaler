@@ -797,9 +797,9 @@ describe("word completion flow", () => {
     await user.selectOptions(stageSelect, "2");
 
     expect(screen.getByLabelText("Palavra alvo MESA")).toBeInTheDocument();
-    expect(screen.getByLabelText("Lição atual")).toHaveClass(
-      "lesson-stage--text-only",
-    );
+    expect(
+      screen.getByRole("img", { name: "Uma mesa com quatro pernas." }),
+    ).toHaveAttribute("src", "/images/word-mesa.svg");
     expect(document.activeElement).toBe(
       screen.getByTestId("learning-input-area"),
     );

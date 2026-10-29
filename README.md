@@ -8,7 +8,7 @@ TeclaLer helps children practise reading and typing. A child sees a word, types 
 
 ## What's in the app
 
-- European Portuguese: 56 original words across four stages, from image-supported starter words to short words, accents and digraphs. The 51 added practice words and their locally generated pt-PT recordings are drafts requiring educator and pronunciation review before a child pilot.
+- European Portuguese: 56 original words across four stages, each with a local illustration and description, from starter words to short words, accents and digraphs. The 51 added practice words and their locally generated pt-PT recordings are drafts requiring educator and pronunciation review before a child pilot. Illustration credits are in [Word illustrations](public/images/WORD_ILLUSTRATIONS.md).
 - Brazilian Portuguese and British English: separate five-word starter lessons with their own audio IDs.
 - British English draft audio uses the UK English Cori voice locally, including words, letters and feedback. The recordings remain marked for pronunciation review.
 - Physical and on-screen keyboard input; visible focus; keyboard-operable language, stage, sound and settings controls; local resume and progress.
