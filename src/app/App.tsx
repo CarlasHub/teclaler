@@ -43,11 +43,13 @@ interface AppProps {
 
 type AudioLessonEvent = Extract<LessonEvent, { audioId?: string }>;
 const AUDIO_VOLUME_STORAGE_KEY = "teclaler.audioVolume";
+const AUTO_ADVANCE_STORAGE_KEY = "teclaler.autoAdvance";
 const LESSON_LOCALE_STORAGE_KEY = "teclaler.lessonLocale";
 const LEGACY_PORTUGUESE_LOCALE_STORAGE_KEY = "teclaler.portugueseLocale";
 const STAGE_STORAGE_KEY = "teclaler.stage.pt-PT";
 const DEFAULT_AUDIO_VOLUME = 1;
 const MIN_AUDIO_VOLUME = 0.25;
+const AUTO_ADVANCE_DELAY_MS = 1400;
 
 export function App({
   audioService,
@@ -75,7 +77,10 @@ export function App({
   const [audioUnavailable, setAudioUnavailable] = useState(
     () => !hasBrowserAudioOutputSupport(),
   );
-  const currentPack = getStagePack(selectedLocale, selectedStage);
+  const currentPack = useMemo(
+    () => getStagePack(selectedLocale, selectedStage),
+    [selectedLocale, selectedStage],
+  );
   const currentManifest = audioManifestsByLocale[selectedLocale];
   const service = useMemo(
     () =>
@@ -113,6 +118,10 @@ export function App({
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [rejectedKey, setRejectedKey] = useState<string | null>(null);
   const [audioVolume, setAudioVolume] = useState(loadAudioVolume);
+  const [autoAdvanceEnabled, setAutoAdvanceEnabled] = useState(
+    loadAutoAdvanceEnabled,
+  );
+  const [autoAdvanceResetKey, setAutoAdvanceResetKey] = useState(0);
   const canGoPrevious = currentItemIndex > 0;
   const canGoNext = currentItemIndex < currentPack.items.length - 1;
   const replayTarget = getLessonReplayTarget(currentItem, lessonState);
@@ -145,9 +154,9 @@ export function App({
       const firstPlayback = service
         .play(firstAudioId, { interrupt: true, volume: audioVolume })
         .catch(() => undefined);
-      audioQueueRef.current = firstPlayback.then(() =>
-        playInSequence(service, queuedAudioIds, audioVolume),
-      );
+      audioQueueRef.current = firstPlayback
+        .then(() => playInSequence(service, queuedAudioIds, audioVolume))
+        .catch(() => undefined);
       void audioQueueRef.current;
     },
     [audioVolume, currentManifest, service],
@@ -157,6 +166,11 @@ export function App({
     const volume = normalizeAudioVolume(nextVolume);
     setAudioVolume(volume);
     saveAudioVolume(volume);
+  }, []);
+
+  const handleAutoAdvanceChange = useCallback((enabled: boolean) => {
+    setAutoAdvanceEnabled(enabled);
+    getLocalStorage()?.setItem(AUTO_ADVANCE_STORAGE_KEY, String(enabled));
   }, []);
 
   const selectLesson = useCallback(
@@ -343,35 +357,44 @@ export function App({
     }
 
     setAudioCue(target.displayText);
-    audioQueueRef.current = Promise.resolve();
+    if (lessonStateRef.current.completed) {
+      setAutoAdvanceResetKey((key) => key + 1);
+    }
 
     if (target.audioId) {
-      void service.play(target.audioId, {
-        interrupt: true,
-        volume: audioVolume,
-      });
+      audioQueueRef.current = service
+        .play(target.audioId, { interrupt: true, volume: audioVolume })
+        .catch(() => undefined);
       return;
     }
 
-    void service.speak(
-      { text: target.text, locale: currentItem.locale },
-      { interrupt: true, volume: audioVolume },
-    );
+    audioQueueRef.current = service
+      .speak(
+        { text: target.text, locale: currentItem.locale },
+        { interrupt: true, volume: audioVolume },
+      )
+      .catch(() => undefined);
   }, [audioVolume, currentItem, service]);
 
   const handleHearWord = useCallback(() => {
     setAudioCue(currentItem.displayText);
-    audioQueueRef.current = Promise.resolve();
+    if (lessonStateRef.current.completed) {
+      setAutoAdvanceResetKey((key) => key + 1);
+    }
     if (currentItem.audio.word) {
-      void service.play(currentItem.audio.word, {
-        interrupt: true,
-        volume: audioVolume,
-      });
+      audioQueueRef.current = service
+        .play(currentItem.audio.word, {
+          interrupt: true,
+          volume: audioVolume,
+        })
+        .catch(() => undefined);
     } else {
-      void service.speak(
-        { text: currentItem.text, locale: currentItem.locale },
-        { interrupt: true, volume: audioVolume },
-      );
+      audioQueueRef.current = service
+        .speak(
+          { text: currentItem.text, locale: currentItem.locale },
+          { interrupt: true, volume: audioVolume },
+        )
+        .catch(() => undefined);
     }
   }, [audioVolume, currentItem, service]);
 
@@ -404,6 +427,50 @@ export function App({
     ];
     void service.preload(audioIds);
   }, [currentItem, service]);
+
+  useEffect(() => {
+    if (
+      view !== "lesson" ||
+      !autoAdvanceEnabled ||
+      !lessonState.completed ||
+      !canGoNext
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    let timer: number | undefined;
+    const scheduleNext = () => {
+      if (cancelled) return;
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        if (document.querySelector('[role="dialog"][aria-modal="true"]')) {
+          scheduleNext();
+          return;
+        }
+        if (
+          lessonStateRef.current.completed &&
+          lessonStateRef.current.itemId === currentItem.id
+        ) {
+          selectLesson(currentItemIndex + 1);
+        }
+      }, AUTO_ADVANCE_DELAY_MS);
+    };
+    void audioQueueRef.current.then(scheduleNext, scheduleNext);
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [
+    autoAdvanceEnabled,
+    autoAdvanceResetKey,
+    canGoNext,
+    currentItem.id,
+    currentItemIndex,
+    lessonState.completed,
+    selectLesson,
+    view,
+  ]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -499,6 +566,7 @@ export function App({
       canGoPrevious={canGoPrevious}
       feedbackMessage={feedbackMessage}
       audioVolume={audioVolume}
+      autoAdvanceEnabled={autoAdvanceEnabled}
       item={currentItem}
       learningInputRef={learningInputRef}
       lessonPosition={{
@@ -515,6 +583,7 @@ export function App({
       }
       onNextLesson={handleNextLesson}
       onAudioVolumeChange={handleAudioVolumeChange}
+      onAutoAdvanceChange={handleAutoAdvanceChange}
       onKeyPress={handleCanonicalInput}
       onPreviousLesson={handlePreviousLesson}
       onLessonLocaleChange={handleLessonLocaleChange}
@@ -650,6 +719,10 @@ function loadAudioVolume(): number {
   return normalizeAudioVolume(
     storedVolume ? Number(storedVolume) : DEFAULT_AUDIO_VOLUME,
   );
+}
+
+function loadAutoAdvanceEnabled(): boolean {
+  return getLocalStorage()?.getItem(AUTO_ADVANCE_STORAGE_KEY) !== "false";
 }
 
 function saveAudioVolume(volume: number): void {

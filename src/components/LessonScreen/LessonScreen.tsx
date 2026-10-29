@@ -29,12 +29,14 @@ interface LessonScreenProps {
   audioCue: string | null;
   audioUnavailable: boolean;
   audioVolume: number;
+  autoAdvanceEnabled: boolean;
   feedbackMessage: string | null;
   learningInputRef: Ref<HTMLElement>;
   localCompletionCount: number;
   hasNextWord: boolean;
   canGoPrevious: boolean;
   onAudioVolumeChange: (volume: number) => void;
+  onAutoAdvanceChange: (enabled: boolean) => void;
   onKeyPress: (key: string) => void;
   onNextLesson: () => void;
   onPreviousLesson: () => void;
@@ -65,12 +67,14 @@ export function LessonScreen({
   audioCue,
   audioUnavailable,
   audioVolume,
+  autoAdvanceEnabled,
   feedbackMessage,
   learningInputRef,
   localCompletionCount,
   hasNextWord,
   canGoPrevious,
   onAudioVolumeChange,
+  onAutoAdvanceChange,
   onKeyPress,
   onNextLesson,
   onPreviousLesson,
@@ -110,7 +114,9 @@ export function LessonScreen({
     ? copy.stageCompleteBody
     : reachedListEnd
       ? copy.unfinishedBody(lessonPosition.total - completedWordCount)
-      : copy.wordSuccessBody(item.displayText);
+      : autoAdvanceEnabled
+        ? copy.wordSuccessAutoBody(item.displayText)
+        : copy.wordSuccessBody(item.displayText);
   const completionAction = lessonCompleted
     ? (onNextStage ?? onHome)
     : reachedListEnd
@@ -383,6 +389,19 @@ export function LessonScreen({
                       value={audioVolume}
                     />
                     <strong>{Math.round(audioVolume * 100)}%</strong>
+                  </label>
+                </section>
+
+                <section className="settings-section">
+                  <label className="auto-advance-control">
+                    <input
+                      checked={autoAdvanceEnabled}
+                      onChange={(event) =>
+                        onAutoAdvanceChange(event.currentTarget.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>{copy.autoAdvanceLabel}</span>
                   </label>
                 </section>
 
@@ -697,6 +716,7 @@ function getLessonCopy(locale: LessonLocale) {
   if (locale === "en-GB") {
     return {
       audioCueLabel: "You hear",
+      autoAdvanceLabel: "Show the next word automatically",
       backToStages: "Choose a stage",
       home: "Stages",
       close: "Close",
@@ -725,6 +745,8 @@ function getLessonCopy(locale: LessonLocale) {
       skipToNextWord: "Next word without finishing this one",
       wordSuccessTitle: "Well done!",
       wordSuccessBody: (word: string) => `${word} is complete.`,
+      wordSuccessAutoBody: (word: string) =>
+        `${word} is complete. The next word will appear soon.`,
       hearAgain: "Hear the word again",
       listEndTitle: "More words to practise",
       unfinishedBody: (count: number) =>
@@ -765,6 +787,7 @@ function getLessonCopy(locale: LessonLocale) {
 
   return {
     audioCueLabel: "Ouves",
+    autoAdvanceLabel: "Mostrar a palavra seguinte automaticamente",
     backToStages: "Escolher etapa",
     home: "Etapas",
     close: "Fechar",
@@ -793,6 +816,8 @@ function getLessonCopy(locale: LessonLocale) {
     skipToNextWord: "Palavra seguinte sem concluir esta",
     wordSuccessTitle: "Muito bem!",
     wordSuccessBody: (word: string) => `${word} está completa.`,
+    wordSuccessAutoBody: (word: string) =>
+      `${word} está completa. A próxima palavra vai aparecer.`,
     hearAgain: "Ouvir a palavra outra vez",
     listEndTitle: "Há mais palavras para praticar",
     unfinishedBody: (count: number) =>
