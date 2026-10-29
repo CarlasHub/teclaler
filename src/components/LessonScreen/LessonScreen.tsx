@@ -255,6 +255,7 @@ export function LessonScreen({
                         lessonLocale,
                       )}
                       className="settings-section__value"
+                      role="img"
                     >
                       <span aria-hidden="true">
                         {getLessonLocaleFlag(lessonLocale)}
