@@ -10,6 +10,7 @@ export function validateAudioManifest(
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const seenIds = new Set<string>();
+  const voices = new Set<string>();
 
   for (const asset of manifest.assets) {
     if (seenIds.has(asset.id)) {
@@ -47,6 +48,15 @@ export function validateAudioManifest(
         message: `${asset.id} path must stay under /audio/${asset.locale}/`,
       });
     }
+
+    if (asset.voice) voices.add(asset.voice);
+  }
+
+  if (voices.size > 1) {
+    issues.push({
+      code: "audio.mixed_voices",
+      message: `${manifest.locale} manifest uses multiple recorded voices: ${[...voices].join(", ")}`,
+    });
   }
 
   return issues;

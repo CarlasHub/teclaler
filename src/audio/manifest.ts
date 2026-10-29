@@ -301,10 +301,10 @@ function createFeedbackAssets(locale: LessonLocale): AudioManifestAsset[] {
 
 function getVoiceHint(locale: LessonLocale): string {
   if (locale === "en-GB") {
-    return "Sonia";
+    return "Cori";
   }
 
-  return locale === "pt-BR" ? "Luciana" : "Joana";
+  return locale === "pt-BR" ? "Luciana" : "Tugão";
 }
 
 function getLetterAudioText(locale: LessonLocale, letter: string): string {
