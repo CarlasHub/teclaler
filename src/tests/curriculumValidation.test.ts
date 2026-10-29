@@ -16,6 +16,7 @@ import {
 } from "../curriculum/portuguesePacks";
 import { enGBStarterPack } from "../curriculum/enGBPack";
 import { ptPTStarterPack } from "../curriculum/ptPTPack";
+import { ptPTStages, ptPTYearOnePack } from "../curriculum/ptPTYearOnePack";
 import { starterLesson } from "../curriculum/starterLesson";
 import type { CurriculumPack } from "../curriculum/types";
 import {
@@ -29,6 +30,30 @@ const EXPECTED_STARTER_WORDS = ["casa", "mala", "pato", "sapo", "bola"];
 const EXPECTED_ENGLISH_STARTER_WORDS = ["house", "bag", "duck", "toad", "ball"];
 
 describe("pt-PT starter curriculum", () => {
+  it("provides 56 original pt-PT words across four reviewable stages", () => {
+    expect(ptPTYearOnePack.items).toHaveLength(56);
+    expect(ptPTStages.map((stage) => stage.id)).toEqual([1, 2, 3, 4]);
+    expect(
+      ptPTYearOnePack.items.filter((item) => item.difficulty === 1),
+    ).toHaveLength(5);
+    expect(
+      ptPTYearOnePack.items.filter((item) => item.difficulty === 2),
+    ).toHaveLength(25);
+    expect(
+      ptPTYearOnePack.items.filter((item) => item.difficulty === 3),
+    ).toHaveLength(14);
+    expect(
+      ptPTYearOnePack.items.filter((item) => item.difficulty === 4),
+    ).toHaveLength(12);
+    expect(
+      ptPTYearOnePack.items
+        .slice(5)
+        .every((item) => item.status === "pedagogy_review"),
+    ).toBe(true);
+    expect(validateCurriculumPack(ptPTYearOnePack, ptPTAudioManifest)).toEqual(
+      [],
+    );
+  });
   it("loads the five content-driven starter words in order", () => {
     expect(starterLesson.portugueseVariant).toBe("pt-PT");
     expect(starterLesson.words.map((word) => word.canonicalText)).toEqual(

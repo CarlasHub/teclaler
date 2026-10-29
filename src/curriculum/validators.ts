@@ -138,13 +138,16 @@ function validateCurriculumItem(
     });
   }
 
-  if (!item.imageAsset?.trim()) {
+  if (item.difficulty === 1 && !item.imageAsset?.trim()) {
     issues.push({
       code: "curriculum.missing_image_asset",
       itemId: item.id,
       message: `${item.id} must include a local image asset`,
     });
-  } else if (!LOCAL_IMAGE_ASSET_PATTERN.test(item.imageAsset)) {
+  } else if (
+    item.imageAsset &&
+    !LOCAL_IMAGE_ASSET_PATTERN.test(item.imageAsset)
+  ) {
     issues.push({
       code: "curriculum.invalid_image_asset",
       itemId: item.id,
@@ -152,7 +155,7 @@ function validateCurriculumItem(
     });
   }
 
-  if (!item.imageAlt?.trim()) {
+  if ((item.difficulty === 1 || item.imageAsset) && !item.imageAlt?.trim()) {
     issues.push({
       code: "curriculum.missing_image_alt",
       itemId: item.id,
