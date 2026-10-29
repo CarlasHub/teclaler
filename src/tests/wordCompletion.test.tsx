@@ -105,6 +105,82 @@ describe("word completion flow", () => {
     ).toBeDisabled();
   });
 
+  it("focuses a visible completion action and advances with Enter", async () => {
+    const user = userEvent.setup();
+    renderApp(createFakeAudioService());
+
+    for (const name of ["Tecla C", "Tecla A", "Tecla S", "Tecla A"]) {
+      await user.click(screen.getByRole("button", { name }));
+    }
+
+    const next = screen.getByRole("button", { name: "Próxima palavra" });
+    expect(next).toHaveFocus();
+    expect(
+      screen.queryByLabelText("Teclado português"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Muito bem!" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Neste dispositivo: 1 conclusão"),
+    ).toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+    expect(screen.getByText("Palavra 2 de 5: MALA.")).toBeInTheDocument();
+  });
+
+  it("resumes at the next unfinished word after returning home", async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    render(
+      <App
+        audioService={createFakeAudioService()}
+        progressStore={createMemoryProgressStore()}
+      />,
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Começar a aprender" }),
+    );
+    for (const key of ["C", "A", "S", "A"]) {
+      fireEvent.keyDown(window, { key });
+    }
+    await user.click(screen.getByRole("button", { name: "Etapas" }));
+    expect(
+      screen.getByRole("button", { name: "Continuar em MALA" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Continuar em MALA" }));
+    expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+  });
+
+  it("offers unfinished practice instead of false stage completion after skips", async () => {
+    const user = userEvent.setup();
+    renderApp(createFakeAudioService());
+    for (let index = 0; index < 4; index++) {
+      await user.click(
+        screen.getByRole("button", { name: "Tentar outra palavra" }),
+      );
+    }
+    expect(screen.getByLabelText("Palavra alvo BOLA")).toBeInTheDocument();
+    for (const key of ["B", "O", "L", "A"]) {
+      fireEvent.keyDown(window, { key });
+    }
+
+    expect(screen.queryByText("Lição completa")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Etapa concluída!" }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("heading", { name: "Há mais palavras para praticar" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Ainda tens 4 palavras para praticar."),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "Praticar palavra em falta" }),
+    );
+    expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
+  });
+
   it("renders MALA from curriculum data when selected", () => {
     renderApp(createFakeAudioService(), { initialItemId: MALA_ID });
 
@@ -589,12 +665,14 @@ describe("word completion flow", () => {
     await waitFor(() =>
       expect(audioService.played).toContain("pt-PT.word.casa"),
     );
-    expect(replayButton).toHaveAccessibleDescription("Vai ouvir CASA.");
+    expect(replayButton).not.toBeInTheDocument();
 
     const wordReplayCount = audioService.played.filter(
       (id) => id === "pt-PT.word.casa",
     ).length;
-    await user.click(replayButton);
+    await user.click(
+      screen.getByRole("button", { name: "Ouvir a palavra outra vez" }),
+    );
     await waitFor(() =>
       expect(
         audioService.played.filter((id) => id === "pt-PT.word.casa"),
@@ -792,8 +870,8 @@ describe("word completion flow", () => {
     ).toHaveLength(expectedLetterAudioCount);
     expect(screen.getByText("Lição completa")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Próxima palavra" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Próxima palavra" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Etapa concluída!" }),
     ).toBeInTheDocument();

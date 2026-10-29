@@ -42,6 +42,7 @@ interface LessonScreenProps {
   onSkipWord: () => void;
   onHome: () => void;
   onNextStage?: () => void;
+  onReviewUnfinished: () => void;
   pressedKey: string | null;
   lessonLocale: LessonLocale;
   replayDisabled: boolean;
@@ -78,6 +79,7 @@ export function LessonScreen({
   onSkipWord,
   onHome,
   onNextStage,
+  onReviewUnfinished,
   pressedKey,
   lessonLocale,
   replayDisabled,
@@ -88,13 +90,37 @@ export function LessonScreen({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement | null>(null);
   const settingsDialogRef = useRef<HTMLElement | null>(null);
+  const completionActionRef = useRef<HTMLButtonElement | null>(null);
   const copy = getLessonCopy(lessonLocale);
   const totalLetters = lessonState.targetSequence.length;
   const progressText = lessonState.completed
     ? copy.wordComplete
     : copy.progressCount(lessonState.cursorIndex, totalLetters);
   const lessonCompleted =
-    lessonState.completed && lessonPosition.current === lessonPosition.total;
+    lessonState.completed && completedWordCount === lessonPosition.total;
+  const reachedListEnd = lessonState.completed && !hasNextWord;
+  const completionTitle = lessonCompleted
+    ? copy.stageCompleteTitle
+    : reachedListEnd
+      ? copy.listEndTitle
+      : copy.wordSuccessTitle;
+  const completionBody = lessonCompleted
+    ? copy.stageCompleteBody
+    : reachedListEnd
+      ? copy.unfinishedBody(lessonPosition.total - completedWordCount)
+      : copy.wordSuccessBody(item.displayText);
+  const completionAction = lessonCompleted
+    ? (onNextStage ?? onHome)
+    : reachedListEnd
+      ? onReviewUnfinished
+      : onNextLesson;
+  const completionActionText = lessonCompleted
+    ? onNextStage
+      ? copy.nextStage
+      : copy.backToStages
+    : reachedListEnd
+      ? copy.reviewUnfinished
+      : copy.nextWord;
   const currentSyllableIndex = getCurrentSyllableIndex(
     item,
     lessonState.cursorIndex,
@@ -113,6 +139,12 @@ export function LessonScreen({
       settingsDialogRef.current?.focus();
     }
   }, [settingsOpen]);
+
+  useEffect(() => {
+    if (lessonState.completed) {
+      completionActionRef.current?.focus({ preventScroll: true });
+    }
+  }, [item.id, lessonState.completed]);
 
   const closeSettings = () => {
     setSettingsOpen(false);
@@ -387,11 +419,9 @@ export function LessonScreen({
             ))}
           </div>
 
-          <p className="lesson-instruction" aria-live="polite">
-            {lessonState.completed
-              ? copy.successInstruction
-              : copy.typeInstruction}
-          </p>
+          {!lessonState.completed ? (
+            <p className="lesson-instruction">{copy.typeInstruction}</p>
+          ) : null}
 
           <div
             className="typing-boxes"
@@ -421,57 +451,59 @@ export function LessonScreen({
             })}
           </div>
 
-          <div className="cue-row" aria-live="polite">
-            <button
-              className="hear-word-button"
-              onClick={onHearWord}
-              type="button"
-            >
-              <span aria-hidden="true">♫</span> {copy.hearWord}
-            </button>
-            {audioCue ? (
-              <div className="audio-cue">
-                <span className="audio-cue__label">{copy.audioCueLabel}</span>
-                <strong>{audioCue}</strong>
-              </div>
-            ) : null}
-            <button
-              aria-describedby="replay-description"
-              className="replay-button"
-              disabled={replayDisabled}
-              onClick={onReplay}
-              type="button"
-            >
-              {copy.replay}
-            </button>
-            <span className="visually-hidden" id="replay-description">
-              {replayDisabled
-                ? copy.replayDisabled
-                : copy.replayEnabled(replayText)}
-            </span>
-            <button
-              className="restart-word-button"
-              onClick={onRestartWord}
-              type="button"
-            >
-              {copy.restartWord}
-            </button>
-            <label className="volume-control">
-              <span>{copy.sound}</span>
-              <input
-                aria-label={copy.soundVolume}
-                max="1"
-                min="0.25"
-                onChange={(event) =>
-                  onAudioVolumeChange(event.currentTarget.valueAsNumber)
-                }
-                step="0.05"
-                type="range"
-                value={audioVolume}
-              />
-              <strong>{Math.round(audioVolume * 100)}%</strong>
-            </label>
-          </div>
+          {!lessonState.completed ? (
+            <div className="cue-row" aria-live="polite">
+              <button
+                className="hear-word-button"
+                onClick={onHearWord}
+                type="button"
+              >
+                <span aria-hidden="true">♫</span> {copy.hearWord}
+              </button>
+              {audioCue ? (
+                <div className="audio-cue">
+                  <span className="audio-cue__label">{copy.audioCueLabel}</span>
+                  <strong>{audioCue}</strong>
+                </div>
+              ) : null}
+              <button
+                aria-describedby="replay-description"
+                className="replay-button"
+                disabled={replayDisabled}
+                onClick={onReplay}
+                type="button"
+              >
+                {copy.replay}
+              </button>
+              <span className="visually-hidden" id="replay-description">
+                {replayDisabled
+                  ? copy.replayDisabled
+                  : copy.replayEnabled(replayText)}
+              </span>
+              <button
+                className="restart-word-button"
+                onClick={onRestartWord}
+                type="button"
+              >
+                {copy.restartWord}
+              </button>
+              <label className="volume-control">
+                <span>{copy.sound}</span>
+                <input
+                  aria-label={copy.soundVolume}
+                  max="1"
+                  min="0.25"
+                  onChange={(event) =>
+                    onAudioVolumeChange(event.currentTarget.valueAsNumber)
+                  }
+                  step="0.05"
+                  type="range"
+                  value={audioVolume}
+                />
+                <strong>{Math.round(audioVolume * 100)}%</strong>
+              </label>
+            </div>
+          ) : null}
 
           {audioUnavailable ? (
             <p className="audio-unavailable" role="status">
@@ -486,6 +518,14 @@ export function LessonScreen({
           ) : null}
         </div>
       </section>
+
+      <p className="visually-hidden" role="status">
+        {copy.wordAnnouncement(
+          lessonPosition.current,
+          lessonPosition.total,
+          item.displayText,
+        )}
+      </p>
 
       <section className="lesson-status" aria-label={copy.lessonProgressLabel}>
         <p>{copy.wordPosition(lessonPosition.current, lessonPosition.total)}</p>
@@ -502,29 +542,6 @@ export function LessonScreen({
           {copy.localProgress(localProgressText)}
         </p>
       </section>
-
-      {lessonCompleted ? (
-        <section className="stage-finish" aria-labelledby="stage-finish-title">
-          <div>
-            <h2 id="stage-finish-title">{copy.stageCompleteTitle}</h2>
-            <p>{copy.stageCompleteBody}</p>
-          </div>
-          <div className="stage-finish__actions">
-            <button onClick={onHome} type="button">
-              {copy.backToStages}
-            </button>
-            {onNextStage ? (
-              <button
-                className="stage-finish__primary"
-                onClick={onNextStage}
-                type="button"
-              >
-                {copy.nextStage}
-              </button>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
 
       <nav className="lesson-nav" aria-label={copy.lessonNavigationLabel}>
         <button
@@ -544,23 +561,55 @@ export function LessonScreen({
             {copy.skipWord}
           </button>
         ) : null}
-        <button
-          className="lesson-nav__button lesson-nav__button--primary"
-          disabled={!canGoNext}
-          onClick={onNextLesson}
-          type="button"
-        >
-          {copy.nextWord}
-        </button>
+        {!lessonState.completed ? (
+          <button
+            className="lesson-nav__button lesson-nav__button--primary"
+            disabled={!canGoNext}
+            onClick={onNextLesson}
+            type="button"
+          >
+            {copy.nextWord}
+          </button>
+        ) : null}
       </nav>
 
-      <OnScreenKeyboard
-        onKeyPress={onKeyPress}
-        pressedKey={pressedKey}
-        rejectedKey={rejectedKey}
-        showAccentRow={containsAccentKey(item.targetSequence)}
-        locale={lessonLocale}
-      />
+      {lessonState.completed ? (
+        <section
+          className="completion-panel"
+          aria-labelledby="completion-title"
+        >
+          <div className="completion-panel__message" role="status">
+            <h2 id="completion-title">{completionTitle}</h2>
+            <p id="completion-message">{completionBody}</p>
+          </div>
+          <div className="completion-panel__actions">
+            <button
+              aria-describedby="completion-message"
+              className="completion-panel__primary"
+              onClick={completionAction}
+              ref={completionActionRef}
+              type="button"
+            >
+              {completionActionText}
+              <span aria-hidden="true"> →</span>
+            </button>
+            <button onClick={onHearWord} type="button">
+              {copy.hearAgain}
+            </button>
+            <button onClick={onRestartWord} type="button">
+              {copy.restartWord}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <OnScreenKeyboard
+          onKeyPress={onKeyPress}
+          pressedKey={pressedKey}
+          rejectedKey={rejectedKey}
+          showAccentRow={containsAccentKey(item.targetSequence)}
+          locale={lessonLocale}
+        />
+      )}
     </main>
   );
 }
@@ -644,11 +693,19 @@ function getLessonCopy(locale: LessonLocale) {
       localMode: "Local mode",
       localProgress: (progress: string) => `On this device: ${progress}`,
       nextWord: "Next word",
+      wordSuccessTitle: "Well done!",
+      wordSuccessBody: (word: string) => `${word} is complete.`,
+      hearAgain: "Hear the word again",
+      listEndTitle: "More words to practise",
+      unfinishedBody: (count: number) =>
+        `${count} ${count === 1 ? "word is" : "words are"} still waiting for you.`,
+      reviewUnfinished: "Practise an unfinished word",
       hearWord: "Hear the word",
       restartWord: "Start word again",
       skipWord: "Try another word",
       typeInstruction: "Type the word one letter at a time.",
-      successInstruction: "Well done! You can move to the next word.",
+      wordAnnouncement: (current: number, total: number, word: string) =>
+        `Word ${current} of ${total}: ${word}.`,
       nextStage: "Next stage",
       oneCompletion: "1 completion",
       previous: "Previous",
@@ -700,11 +757,19 @@ function getLessonCopy(locale: LessonLocale) {
     localMode: "Modo local",
     localProgress: (progress: string) => `Neste dispositivo: ${progress}`,
     nextWord: "Próxima palavra",
+    wordSuccessTitle: "Muito bem!",
+    wordSuccessBody: (word: string) => `${word} está completa.`,
+    hearAgain: "Ouvir a palavra outra vez",
+    listEndTitle: "Há mais palavras para praticar",
+    unfinishedBody: (count: number) =>
+      `Ainda tens ${count} ${count === 1 ? "palavra" : "palavras"} para praticar.`,
+    reviewUnfinished: "Praticar palavra em falta",
     hearWord: "Ouvir palavra",
     restartWord: "Recomeçar palavra",
     skipWord: "Tentar outra palavra",
     typeInstruction: "Escreve a palavra, uma letra de cada vez.",
-    successInstruction: "Conseguiste! Podes passar à próxima palavra.",
+    wordAnnouncement: (current: number, total: number, word: string) =>
+      `Palavra ${current} de ${total}: ${word}.`,
     nextStage: "Etapa seguinte",
     oneCompletion: "1 conclusão",
     previous: "Anterior",

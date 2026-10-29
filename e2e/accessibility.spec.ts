@@ -83,6 +83,61 @@ test("lesson controls support listening, restarting and trying another word", as
   await expect(page.getByText("Neste dispositivo: 0 conclusões")).toBeVisible();
 });
 
+test("completing a word exposes a focused next action on narrow screens", async ({
+  page,
+}) => {
+  for (const [index, viewport] of [
+    { width: 390, height: 844 },
+    { width: 375, height: 667 },
+    { width: 320, height: 568 },
+  ].entries()) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: /Começar a aprender|Continuar em CASA/ })
+      .click();
+    for (const key of ["C", "A", "S", "A"]) {
+      await page.getByRole("button", { name: `Tecla ${key}` }).click();
+    }
+    const next = page.getByRole("button", { name: "Próxima palavra" });
+    await expect(next).toBeFocused();
+    await expect(next).toBeInViewport();
+    await expect(page.getByLabel("Palavra alvo CASA")).toBeInViewport();
+    await expect(
+      page.getByRole("list", { name: "Letras da palavra CASA" }),
+    ).toBeInViewport();
+    if (index === 0) await page.keyboard.press("Enter");
+    else if (index === 1) await page.keyboard.press("Space");
+    else await next.click();
+    await expect(page.getByLabel("Palavra alvo MALA")).toBeVisible();
+    await expect(page.getByText("Palavra 2 de 5: MALA.")).toBeAttached();
+    await page.evaluate(() =>
+      localStorage.removeItem("teclaler.lastItem.pt-PT.1"),
+    );
+  }
+});
+
+test("finishing the starter stage exposes the next stage action", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Começar a aprender" }).click();
+  for (const word of ["CASA", "MALA", "PATO", "SAPO", "BOLA"]) {
+    await page.getByTestId("learning-input-area").focus();
+    await page.keyboard.type(word);
+    if (word !== "BOLA") await page.keyboard.press("Enter");
+  }
+  await expect(
+    page.getByRole("heading", { name: "Etapa concluída!" }),
+  ).toBeVisible();
+  const nextStage = page.getByRole("button", { name: "Etapa seguinte" });
+  await expect(nextStage).toBeFocused();
+  await expect(nextStage).toBeInViewport();
+  await page.keyboard.press("Enter");
+  await expect(page.getByLabel("Palavra alvo MESA")).toBeVisible();
+});
+
 test("lesson and settings have no automated WCAG A/AA violations", async ({
   page,
 }) => {
@@ -102,6 +157,14 @@ test("lesson and settings have no automated WCAG A/AA violations", async ({
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
     .analyze();
   expect(settings.violations).toEqual([]);
+
+  await page.getByRole("button", { name: "Fechar" }).click();
+  await page.getByTestId("learning-input-area").focus();
+  await page.keyboard.type("CASA");
+  const completion = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(completion.violations).toEqual([]);
 });
 
 test("compact desktop keeps the target and accent keyboard in view", async ({
