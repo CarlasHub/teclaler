@@ -18,6 +18,10 @@ interface LessonScreenProps {
     total: number;
   };
   lessonState: LessonState;
+  selectedStage: number;
+  stageOptions: readonly { id: number; title: string; description: string }[];
+  onStageChange: (stage: number) => void;
+  completedWordCount: number;
   currentKey: string | null;
   audioCue: string | null;
   audioUnavailable: boolean;
@@ -45,6 +49,10 @@ export function LessonScreen({
   item,
   lessonPosition,
   lessonState,
+  selectedStage,
+  stageOptions,
+  onStageChange,
+  completedWordCount,
   currentKey,
   audioCue,
   audioUnavailable,
@@ -179,6 +187,31 @@ export function LessonScreen({
           </div>
         </header>
 
+        {stageOptions.length > 0 ? (
+          <div className="stage-switcher">
+            <label htmlFor="lesson-stage-select">Etapa de aprendizagem</label>
+            <select
+              id="lesson-stage-select"
+              onChange={(event) =>
+                onStageChange(Number(event.currentTarget.value))
+              }
+              value={selectedStage}
+            >
+              {stageOptions.map((stage) => (
+                <option key={stage.id} value={stage.id}>
+                  {`${stage.id}. ${stage.title}`}
+                </option>
+              ))}
+            </select>
+            <p>
+              {
+                stageOptions.find((stage) => stage.id === selectedStage)
+                  ?.description
+              }
+            </p>
+          </div>
+        ) : null}
+
         {settingsOpen ? (
           <div className="settings-backdrop" onClick={closeSettings}>
             <section
@@ -279,6 +312,21 @@ export function LessonScreen({
                 </section>
 
                 <p className="settings-privacy-note">{copy.privacyNote}</p>
+                <section
+                  aria-labelledby="settings-progress-title"
+                  className="settings-section"
+                >
+                  <h3 id="settings-progress-title">
+                    {lessonLocale === "en-GB"
+                      ? "Progress on this device"
+                      : "Progresso neste dispositivo"}
+                  </h3>
+                  <p>
+                    {lessonLocale === "en-GB"
+                      ? `${completedWordCount} of ${lessonPosition.total} words completed in this stage`
+                      : `${completedWordCount} de ${lessonPosition.total} palavras concluídas nesta etapa`}
+                  </p>
+                </section>
               </div>
             </section>
           </div>
@@ -613,6 +661,12 @@ function trapDialogFocus(
 
   const firstElement = focusableElements[0];
   const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (event.shiftKey && document.activeElement === container) {
+    event.preventDefault();
+    lastElement.focus();
+    return;
+  }
 
   if (event.shiftKey && document.activeElement === firstElement) {
     event.preventDefault();

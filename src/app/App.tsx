@@ -9,6 +9,7 @@ import {
   curriculumPacksByLocale,
   supportedLessonLocales,
 } from "../curriculum/portuguesePacks";
+import { ptPTStages, ptPTYearOnePack } from "../curriculum/ptPTYearOnePack";
 import type { CurriculumPack, LessonLocale } from "../curriculum/types";
 import type { LessonEvent } from "../engine/events";
 import { displayKey, normalizePhysicalKey } from "../engine/inputEngine";
@@ -36,6 +37,7 @@ type AudioLessonEvent = Extract<LessonEvent, { audioId?: string }>;
 const AUDIO_VOLUME_STORAGE_KEY = "teclaler.audioVolume";
 const LESSON_LOCALE_STORAGE_KEY = "teclaler.lessonLocale";
 const LEGACY_PORTUGUESE_LOCALE_STORAGE_KEY = "teclaler.portugueseLocale";
+const STAGE_STORAGE_KEY = "teclaler.stage.pt-PT";
 const DEFAULT_AUDIO_VOLUME = 1;
 const MIN_AUDIO_VOLUME = 0.25;
 
@@ -49,10 +51,19 @@ export function App({
   const [selectedLocale, setSelectedLocale] = useState<LessonLocale>(
     () => initialLocale ?? loadPreferredLessonLocale(),
   );
+  const [selectedStage, setSelectedStage] = useState<number>(() => {
+    if (initialItemId) {
+      return (
+        ptPTYearOnePack.items.find((item) => item.id === initialItemId)
+          ?.difficulty ?? 1
+      );
+    }
+    return progressStore ? 1 : loadPreferredStage();
+  });
   const [audioUnavailable, setAudioUnavailable] = useState(
     () => !hasBrowserAudioOutputSupport(),
   );
-  const currentPack = curriculumPacksByLocale[selectedLocale];
+  const currentPack = getStagePack(selectedLocale, selectedStage);
   const currentManifest = audioManifestsByLocale[selectedLocale];
   const service = useMemo(
     () =>
@@ -68,7 +79,13 @@ export function App({
     () => progressStore ?? createBrowserProgressStore(),
     [progressStore],
   );
-  const initialItemIndex = getInitialItemIndex(initialItemId, currentPack);
+  const initialItemIndex = getInitialItemIndex(
+    initialItemId ??
+      (progressStore
+        ? undefined
+        : loadLastItemId(selectedLocale, selectedStage)),
+    currentPack,
+  );
   const [currentItemIndex, setCurrentItemIndex] = useState(initialItemIndex);
   const currentItem = currentPack.items[currentItemIndex];
   const [lessonState, setLessonStateValue] = useState(() =>
@@ -133,6 +150,7 @@ export function App({
   const selectLesson = useCallback(
     (nextIndex: number) => {
       const nextItem = currentPack.items[nextIndex];
+      saveLastItemId(selectedLocale, selectedStage, nextItem.id);
       setCurrentItemIndex(nextIndex);
       setLessonState(createLessonState(nextItem));
       setAudioCue(null);
@@ -141,7 +159,38 @@ export function App({
       setRejectedKey(null);
       restoreLearningFocus();
     },
-    [currentPack, restoreLearningFocus, setLessonState],
+    [
+      currentPack,
+      restoreLearningFocus,
+      selectedLocale,
+      selectedStage,
+      setLessonState,
+    ],
+  );
+
+  const handleStageChange = useCallback(
+    (nextStage: number) => {
+      if (
+        selectedLocale !== "pt-PT" ||
+        !ptPTStages.some((stage) => stage.id === nextStage)
+      )
+        return;
+      savePreferredStage(nextStage);
+      const nextPack = getStagePack("pt-PT", nextStage);
+      const nextIndex = getInitialItemIndex(
+        loadLastItemId("pt-PT", nextStage),
+        nextPack,
+      );
+      setSelectedStage(nextStage);
+      setCurrentItemIndex(nextIndex);
+      setLessonState(createLessonState(nextPack.items[nextIndex]));
+      setAudioCue(null);
+      setFeedbackMessage(null);
+      setPressedKey(null);
+      setRejectedKey(null);
+      restoreLearningFocus();
+    },
+    [restoreLearningFocus, selectedLocale, setLessonState],
   );
 
   const handleLessonLocaleChange = useCallback(
@@ -150,12 +199,17 @@ export function App({
         return;
       }
 
-      const nextPack = curriculumPacksByLocale[nextLocale];
-      const nextIndex = Math.min(currentItemIndex, nextPack.items.length - 1);
+      const nextStage = nextLocale === "pt-PT" ? loadPreferredStage() : 1;
+      const nextPack = getStagePack(nextLocale, nextStage);
+      const nextIndex = getInitialItemIndex(
+        loadLastItemId(nextLocale, nextStage),
+        nextPack,
+      );
       const nextItem = nextPack.items[nextIndex];
 
       savePreferredLessonLocale(nextLocale);
       setSelectedLocale(nextLocale);
+      setSelectedStage(nextStage);
       setCurrentItemIndex(nextIndex);
       setLessonState(createLessonState(nextItem));
       setAudioCue(null);
@@ -163,7 +217,7 @@ export function App({
       setPressedKey(null);
       setRejectedKey(null);
     },
-    [currentItemIndex, selectedLocale, setLessonState],
+    [selectedLocale, setLessonState],
   );
 
   const handleNextLesson = useCallback(() => {
@@ -292,6 +346,7 @@ export function App({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       if (shouldLetFocusedControlHandleKey(event)) {
         return;
       }
@@ -339,6 +394,14 @@ export function App({
         total: currentPack.items.length,
       }}
       lessonState={lessonState}
+      selectedStage={selectedStage}
+      stageOptions={selectedLocale === "pt-PT" ? ptPTStages : []}
+      onStageChange={handleStageChange}
+      completedWordCount={
+        currentPack.items.filter(
+          (item) => (progressSnapshot.completedItems[item.id] ?? 0) > 0,
+        ).length
+      }
       localCompletionCount={
         progressSnapshot.completedItems[currentItem.id] ?? 0
       }
@@ -356,6 +419,41 @@ export function App({
       supportedLessonLocales={supportedLessonLocales}
     />
   );
+}
+
+function getStagePack(locale: LessonLocale, stage: number): CurriculumPack {
+  if (locale !== "pt-PT") return curriculumPacksByLocale[locale];
+  return {
+    ...ptPTYearOnePack,
+    id: `${ptPTYearOnePack.id}-stage-${stage}`,
+    items: ptPTYearOnePack.items.filter((item) => item.difficulty === stage),
+  };
+}
+
+function loadPreferredStage(): number {
+  const value = Number(getLocalStorage()?.getItem(STAGE_STORAGE_KEY));
+  return ptPTStages.some((stage) => stage.id === value) ? value : 1;
+}
+
+function savePreferredStage(stage: number): void {
+  getLocalStorage()?.setItem(STAGE_STORAGE_KEY, String(stage));
+}
+
+function lastItemStorageKey(locale: LessonLocale, stage: number): string {
+  return `teclaler.lastItem.${locale}.${stage}`;
+}
+
+function loadLastItemId(
+  locale: LessonLocale,
+  stage: number,
+): string | undefined {
+  return (
+    getLocalStorage()?.getItem(lastItemStorageKey(locale, stage)) ?? undefined
+  );
+}
+
+function saveLastItemId(locale: LessonLocale, stage: number, id: string): void {
+  getLocalStorage()?.setItem(lastItemStorageKey(locale, stage), id);
 }
 
 function shouldLetFocusedControlHandleKey(event: KeyboardEvent): boolean {
