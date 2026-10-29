@@ -130,3 +130,35 @@ test("starter lesson keeps the full on-screen keyboard in a compact desktop view
   await page.getByRole("button", { name: "Começar a aprender" }).click();
   await expect(page.getByRole("button", { name: "Apagar" })).toBeInViewport();
 });
+
+test("mobile lesson keeps the word and typing position above the keyboard", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 375, height: 667 },
+    { width: 320, height: 568 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: /Começar a aprender|Continuar em CASA/ })
+      .click();
+    const target = page.getByLabel("Palavra alvo CASA");
+    const boxes = page.getByRole("list", { name: "Letras da palavra CASA" });
+    await expect(target).toBeInViewport();
+    await expect(boxes).toBeInViewport();
+    const boxesBounds = await boxes.boundingBox();
+    const keyboardBounds = await page
+      .getByRole("button", { name: "Tecla Q" })
+      .boundingBox();
+    expect(boxesBounds!.y + boxesBounds!.height).toBeLessThan(
+      keyboardBounds!.y,
+    );
+    if (viewport.height > 720) {
+      await expect(
+        page.getByRole("button", { name: "Ouvir palavra" }),
+      ).toBeInViewport();
+    }
+  }
+});
