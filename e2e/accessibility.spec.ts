@@ -62,6 +62,39 @@ test("the home journey is operable with Tab and Enter", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("simple home choices fit iPad portrait, landscape and split layouts", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 820, height: 1180 },
+    { width: 1180, height: 820 },
+    { width: 600, height: 820 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await expect(
+      page.getByRole("heading", { name: "Vamos ler?" }),
+    ).toBeVisible();
+    const start = page.getByRole("button", { name: "Começar a aprender" });
+    const firstStage = page.getByRole("button", {
+      name: /Etapa 1 Primeiras palavras/,
+    });
+    const secondStage = page.getByRole("button", {
+      name: /Etapa 2 Sílabas simples/,
+    });
+    for (const control of [start, firstStage, secondStage]) {
+      const bounds = await control.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.width).toBeGreaterThanOrEqual(44);
+      expect(bounds!.height).toBeGreaterThanOrEqual(44);
+      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
+    }
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(viewport.width);
+  }
+});
+
 test("lesson controls support listening, restarting and trying another word", async ({
   page,
 }) => {
