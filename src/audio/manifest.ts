@@ -1,6 +1,6 @@
 import { enGBStarterPack } from "../curriculum/enGBPack";
 import { ptBRStarterPack } from "../curriculum/portuguesePacks";
-import { ptPTStarterPack } from "../curriculum/ptPTPack";
+import { ptPTYearOnePack } from "../curriculum/ptPTYearOnePack";
 import type {
   CurriculumPack,
   LessonLocale,
@@ -149,7 +149,7 @@ const ENGLISH_KEYBOARD_LETTERS = "qwertyuiopasdfghjklzxcvbnm".split("");
 
 export const ptPTAudioManifest: AudioManifest = createAudioManifest(
   "pt-PT",
-  ptPTStarterPack,
+  ptPTYearOnePack,
 );
 
 export const ptBRAudioManifest: AudioManifest = createAudioManifest(

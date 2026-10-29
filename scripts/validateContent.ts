@@ -10,6 +10,7 @@ import {
   supportedLessonLocales,
 } from "../src/curriculum/portuguesePacks";
 import { starterLesson } from "../src/curriculum/starterLesson";
+import { ptPTYearOnePack } from "../src/curriculum/ptPTYearOnePack";
 import type { CurriculumPack } from "../src/curriculum/types";
 import {
   type ValidationIssue,
@@ -27,6 +28,9 @@ const packs = supportedLessonLocales.map((locale) => {
   const pack = curriculumPacksByLocale[locale];
   return releaseMode ? forcePackIntoReleaseMode(pack) : pack;
 });
+packs.push(
+  releaseMode ? forcePackIntoReleaseMode(ptPTYearOnePack) : ptPTYearOnePack,
+);
 const issues = validateContent(lessons, packs);
 
 if (issues.length > 0) {
