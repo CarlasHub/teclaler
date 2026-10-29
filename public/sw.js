@@ -1,22 +1,14 @@
-const CACHE_NAME = "teclaler-app-shell-v4";
+const CACHE_NAME = "__TECLALER_CACHE_VERSION__";
 const scopePath = new URL(self.registration.scope).pathname.replace(/\/$/u, "");
 const withScope = (path) => `${scopePath}${path === "/" ? "/" : path}`;
-const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/images/icon.svg",
-  "/images/house-simple.svg",
-  "/images/bag-simple.svg",
-  "/images/duck-simple.svg",
-  "/images/toad-simple.svg",
-  "/images/ball-simple.svg",
-].map(withScope);
+const APP_SHELL = __TECLALER_PRECACHE_PATHS__.map(withScope);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(APP_SHELL);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (let index = 0; index < APP_SHELL.length; index += 16) {
+        await cache.addAll(APP_SHELL.slice(index, index + 16));
+      }
     }),
   );
   self.skipWaiting();
@@ -27,7 +19,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => key !== CACHE_NAME && key.startsWith("teclaler-"))
           .map((key) => caches.delete(key)),
       );
     }),
@@ -40,9 +32,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(withScope("/index.html"))),
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request);
-    }),
+    caches
+      .match(event.request)
+      .then((cached) => cached || fetch(event.request)),
   );
 });
