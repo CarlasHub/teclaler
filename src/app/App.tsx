@@ -16,7 +16,6 @@ import type { LessonEvent } from "../engine/events";
 import { displayKey, normalizePhysicalKey } from "../engine/inputEngine";
 import {
   createLessonState,
-  getCurrentTarget,
   getLessonReplayTarget,
   processLessonBackspace,
   processLessonInput,
@@ -353,6 +352,35 @@ export function App({
     );
   }, [audioVolume, currentItem, service]);
 
+  const handleHearWord = useCallback(() => {
+    setAudioCue(currentItem.displayText);
+    audioQueueRef.current = Promise.resolve();
+    if (currentItem.audio.word) {
+      void service.play(currentItem.audio.word, {
+        interrupt: true,
+        volume: audioVolume,
+      });
+    } else {
+      void service.speak(
+        { text: currentItem.text, locale: currentItem.locale },
+        { interrupt: true, volume: audioVolume },
+      );
+    }
+  }, [audioVolume, currentItem, service]);
+
+  const handleRestartWord = useCallback(() => {
+    setLessonState(createLessonState(currentItem));
+    setAudioCue(null);
+    setFeedbackMessage(null);
+    setPressedKey(null);
+    setRejectedKey(null);
+    restoreLearningFocus();
+  }, [currentItem, restoreLearningFocus, setLessonState]);
+
+  const handleSkipWord = useCallback(() => {
+    if (canGoNext) selectLesson(currentItemIndex + 1);
+  }, [canGoNext, currentItemIndex, selectLesson]);
+
   useEffect(() => {
     setAudioUnavailable(!hasBrowserAudioOutputSupport());
   }, [selectedLocale]);
@@ -459,8 +487,8 @@ export function App({
       audioCue={audioCue}
       audioUnavailable={audioUnavailable}
       canGoNext={canGoNext && lessonState.completed}
+      hasNextWord={canGoNext}
       canGoPrevious={canGoPrevious}
-      currentKey={getCurrentTarget(lessonState)}
       feedbackMessage={feedbackMessage}
       audioVolume={audioVolume}
       item={currentItem}
@@ -487,6 +515,9 @@ export function App({
       onPreviousLesson={handlePreviousLesson}
       onLessonLocaleChange={handleLessonLocaleChange}
       onReplay={handleReplay}
+      onHearWord={handleHearWord}
+      onRestartWord={handleRestartWord}
+      onSkipWord={handleSkipWord}
       onHome={() => setView("home")}
       onNextStage={
         selectedLocale === "pt-PT" && selectedStage < 4

@@ -22,7 +22,6 @@ interface LessonScreenProps {
   stageOptions: readonly { id: number; title: string; description: string }[];
   onStageChange: (stage: number) => void;
   completedWordCount: number;
-  currentKey: string | null;
   audioCue: string | null;
   audioUnavailable: boolean;
   audioVolume: number;
@@ -30,6 +29,7 @@ interface LessonScreenProps {
   learningInputRef: Ref<HTMLElement>;
   localCompletionCount: number;
   canGoNext: boolean;
+  hasNextWord: boolean;
   canGoPrevious: boolean;
   onAudioVolumeChange: (volume: number) => void;
   onKeyPress: (key: string) => void;
@@ -37,6 +37,9 @@ interface LessonScreenProps {
   onPreviousLesson: () => void;
   onLessonLocaleChange: (locale: LessonLocale) => void;
   onReplay: () => void;
+  onHearWord: () => void;
+  onRestartWord: () => void;
+  onSkipWord: () => void;
   onHome: () => void;
   onNextStage?: () => void;
   pressedKey: string | null;
@@ -55,7 +58,6 @@ export function LessonScreen({
   stageOptions,
   onStageChange,
   completedWordCount,
-  currentKey,
   audioCue,
   audioUnavailable,
   audioVolume,
@@ -63,6 +65,7 @@ export function LessonScreen({
   learningInputRef,
   localCompletionCount,
   canGoNext,
+  hasNextWord,
   canGoPrevious,
   onAudioVolumeChange,
   onKeyPress,
@@ -70,6 +73,9 @@ export function LessonScreen({
   onPreviousLesson,
   onLessonLocaleChange,
   onReplay,
+  onHearWord,
+  onRestartWord,
+  onSkipWord,
   onHome,
   onNextStage,
   pressedKey,
@@ -381,6 +387,12 @@ export function LessonScreen({
             ))}
           </div>
 
+          <p className="lesson-instruction" aria-live="polite">
+            {lessonState.completed
+              ? copy.successInstruction
+              : copy.typeInstruction}
+          </p>
+
           <div
             className="typing-boxes"
             role="list"
@@ -410,12 +422,19 @@ export function LessonScreen({
           </div>
 
           <div className="cue-row" aria-live="polite">
-            <div className="audio-cue">
-              <span className="audio-cue__label">{copy.audioCueLabel}</span>
-              <strong>
-                {audioCue ?? (currentKey ? displayKey(currentKey) : item.text)}
-              </strong>
-            </div>
+            <button
+              className="hear-word-button"
+              onClick={onHearWord}
+              type="button"
+            >
+              <span aria-hidden="true">♫</span> {copy.hearWord}
+            </button>
+            {audioCue ? (
+              <div className="audio-cue">
+                <span className="audio-cue__label">{copy.audioCueLabel}</span>
+                <strong>{audioCue}</strong>
+              </div>
+            ) : null}
             <button
               aria-describedby="replay-description"
               className="replay-button"
@@ -430,6 +449,13 @@ export function LessonScreen({
                 ? copy.replayDisabled
                 : copy.replayEnabled(replayText)}
             </span>
+            <button
+              className="restart-word-button"
+              onClick={onRestartWord}
+              type="button"
+            >
+              {copy.restartWord}
+            </button>
             <label className="volume-control">
               <span>{copy.sound}</span>
               <input
@@ -509,6 +535,15 @@ export function LessonScreen({
         >
           {copy.previous}
         </button>
+        {hasNextWord && !lessonState.completed ? (
+          <button
+            className="lesson-nav__button lesson-nav__button--skip"
+            onClick={onSkipWord}
+            type="button"
+          >
+            {copy.skipWord}
+          </button>
+        ) : null}
         <button
           className="lesson-nav__button lesson-nav__button--primary"
           disabled={!canGoNext}
@@ -609,6 +644,11 @@ function getLessonCopy(locale: LessonLocale) {
       localMode: "Local mode",
       localProgress: (progress: string) => `On this device: ${progress}`,
       nextWord: "Next word",
+      hearWord: "Hear the word",
+      restartWord: "Start word again",
+      skipWord: "Try another word",
+      typeInstruction: "Type the word one letter at a time.",
+      successInstruction: "Well done! You can move to the next word.",
       nextStage: "Next stage",
       oneCompletion: "1 completion",
       previous: "Previous",
@@ -660,6 +700,11 @@ function getLessonCopy(locale: LessonLocale) {
     localMode: "Modo local",
     localProgress: (progress: string) => `Neste dispositivo: ${progress}`,
     nextWord: "Próxima palavra",
+    hearWord: "Ouvir palavra",
+    restartWord: "Recomeçar palavra",
+    skipWord: "Tentar outra palavra",
+    typeInstruction: "Escreve a palavra, uma letra de cada vez.",
+    successInstruction: "Conseguiste! Podes passar à próxima palavra.",
     nextStage: "Etapa seguinte",
     oneCompletion: "1 conclusão",
     previous: "Anterior",

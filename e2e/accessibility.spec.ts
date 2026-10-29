@@ -62,6 +62,27 @@ test("the home journey is operable with Tab and Enter", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("lesson controls support listening, restarting and trying another word", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Começar a aprender" }).click();
+  await expect(
+    page.getByText("Escreve a palavra, uma letra de cada vez."),
+  ).toBeVisible();
+  await expect(page.getByText("Ouves")).toHaveCount(0);
+  await page.getByRole("button", { name: "Ouvir palavra" }).click();
+  await expect(page.getByText("Ouves")).toBeVisible();
+  await page.getByTestId("learning-input-area").focus();
+  await page.keyboard.press("C");
+  await expect(page.getByLabel("Letra 1 de 4, C")).toBeVisible();
+  await page.getByRole("button", { name: "Recomeçar palavra" }).click();
+  await expect(page.getByLabel("Letra 1 de 4, vazia")).toBeVisible();
+  await page.getByRole("button", { name: "Tentar outra palavra" }).click();
+  await expect(page.getByLabel("Palavra alvo MALA")).toBeVisible();
+  await expect(page.getByText("Neste dispositivo: 0 conclusões")).toBeVisible();
+});
+
 test("lesson and settings have no automated WCAG A/AA violations", async ({
   page,
 }) => {
@@ -99,4 +120,13 @@ test("compact desktop keeps the target and accent keyboard in view", async ({
   await expect(accentKey).toBeInViewport();
   const keyBounds = await accentKey.boundingBox();
   expect(keyBounds?.height).toBeGreaterThanOrEqual(44);
+});
+
+test("starter lesson keeps the full on-screen keyboard in a compact desktop viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Começar a aprender" }).click();
+  await expect(page.getByRole("button", { name: "Apagar" })).toBeInViewport();
 });
