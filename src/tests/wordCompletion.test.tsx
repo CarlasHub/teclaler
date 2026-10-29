@@ -124,9 +124,8 @@ describe("word completion flow", () => {
 
     const next = screen.getByRole("button", { name: "Próxima palavra" });
     expect(next).toHaveFocus();
-    expect(
-      screen.queryByLabelText("Teclado português"),
-    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Teclado português")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Tecla C" })).toBeDisabled();
     expect(
       screen.getByRole("heading", { name: "Muito bem!" }),
     ).toBeInTheDocument();
@@ -703,9 +702,12 @@ describe("word completion flow", () => {
   });
 
   it("provides a keyboard-accessible volume control that affects playback and spoken feedback", async () => {
+    const user = userEvent.setup();
     const audioService = createFakeAudioService();
 
     renderApp(audioService);
+
+    await user.click(screen.getByRole("button", { name: "Definições" }));
 
     const volumeControl = screen.getByLabelText("Volume do som");
     expect(volumeControl).toHaveAttribute("type", "range");
@@ -713,6 +715,7 @@ describe("word completion flow", () => {
 
     fireEvent.change(volumeControl, { target: { value: "0.6" } });
     expect(volumeControl).toHaveValue("0.6");
+    await user.click(screen.getByRole("button", { name: "Fechar" }));
 
     fireEvent.keyDown(window, { key: "C" });
 

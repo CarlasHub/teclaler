@@ -1140,15 +1140,12 @@ button:focus-visible,
 
 .completion-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  padding: 18px 20px;
+  grid-template-columns: 1fr;
+  padding: 10px;
   border: 2px solid #86c79a;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #eaf8ee;
   color: #143c29;
-  box-shadow: 0 10px 24px rgb(32 91 51 / 12%);
 }
 
 .completion-panel__message h2 {
@@ -1159,38 +1156,6 @@ button:focus-visible,
 .completion-panel__message p {
   margin: 0;
   font-weight: 700;
-}
-
-.completion-panel__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.completion-panel__actions button {
-  min-height: 48px;
-  padding: 10px 14px;
-  border: 2px solid #276c43;
-  border-radius: 12px;
-  background: #fff;
-  color: #185236;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.completion-panel__actions button:hover {
-  background: #f7fff8;
-}
-
-.completion-panel__actions .completion-panel__primary {
-  border-color: #166039;
-  background: #166039;
-  color: #fff;
-  font-size: 1.1rem;
-}
-
-.completion-panel__actions .completion-panel__primary:hover {
-  background: #0f4e2d;
 }
 
 .keyboard {
@@ -1308,16 +1273,6 @@ button:focus-visible,
     padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     background: rgb(239 246 255 / 96%);
     box-shadow: 0 -8px 24px rgb(42 85 152 / 12%);
-  }
-
-  .completion-panel {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 20;
-    border-radius: 18px 18px 0 0;
-    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1531,30 +1486,8 @@ button:focus-visible,
     box-shadow: 0 -8px 24px rgb(42 85 152 / 12%);
   }
 
-  .completion-panel {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
-  }
-
   .completion-panel__message {
     text-align: center;
-  }
-
-  .completion-panel__actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .completion-panel__actions .completion-panel__primary {
-    grid-column: 1 / -1;
-    min-height: 54px;
-  }
-
-  .completion-panel__actions button {
-    min-width: 0;
-    min-height: 44px;
-    padding: 7px 9px;
   }
 
   .keyboard__row--letters {
@@ -1691,9 +1624,9 @@ button:focus-visible,
   }
 }
 
-@media (min-width: 900px) and (max-width: 1200px) and (max-height: 900px) {
+@media (min-width: 900px), (min-width: 800px) and (max-height: 650px) {
   .lesson-shell {
-    grid-template-columns: minmax(0, 1fr) minmax(520px, 0.95fr);
+    grid-template-columns: minmax(0, 1fr) minmax(500px, 0.95fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     align-items: start;
     padding-bottom: 14px;
@@ -1756,8 +1689,7 @@ button:focus-visible,
     flex-basis: 100%;
   }
 
-  .keyboard,
-  .completion-panel {
+  .keyboard {
     position: static;
     grid-column: 2;
     grid-row: 2 / 4;
@@ -1769,21 +1701,17 @@ button:focus-visible,
   }
 
   .keyboard {
-    --keyboard-gap: 5px;
-    padding: 14px;
+    --keyboard-gap: 4px;
+    padding: 10px;
   }
 
   .keyboard__key {
     min-height: 48px;
     font-size: 1.05rem;
   }
-
-  .completion-panel {
-    grid-template-columns: 1fr;
-  }
 }
 
-@media (min-width: 900px) and (max-width: 1039px) and (max-height: 900px) {
+@media (min-width: 800px) and (max-width: 1039px) {
   .word-navigation__button {
     width: 50px;
     min-height: 54px;
@@ -1806,6 +1734,405 @@ button:focus-visible,
 
   .meaning-visual img {
     width: min(30vw, 100px);
+  }
+}
+
+@media (max-width: 899px) {
+  .stage-switcher {
+    display: none;
+  }
+
+  .lesson-stage {
+    align-items: start;
+  }
+
+  .lesson-shell {
+    padding-bottom: calc(310px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .keyboard {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    width: auto;
+    margin-inline: 0;
+    background: rgb(239 246 255 / 96%);
+    box-shadow: 0 -8px 24px rgb(42 85 152 / 12%);
+  }
+}
+
+@media (max-width: 899px) and (max-height: 650px) {
+  .lesson-shell {
+    gap: 5px;
+    padding-block: 6px;
+  }
+
+  .meaning-visual {
+    display: none;
+  }
+
+  .lesson-stage {
+    padding: 8px;
+  }
+
+  .lesson-focus {
+    gap: 4px;
+  }
+
+  .lesson-instruction {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+@media (max-width: 499px) {
+  .keyboard {
+    --keyboard-gap: 4px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    padding: 6px;
+  }
+
+  .keyboard__row {
+    display: contents;
+  }
+
+  .keyboard__key {
+    min-height: 44px;
+    padding-inline: 0;
+    font-size: 1rem;
+  }
+
+  .keyboard__key--space {
+    grid-column: span 4;
+  }
+
+  .keyboard__key--backspace {
+    grid-column: span 3;
+  }
+
+  .cue-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .hear-word-button,
+  .replay-button,
+  .restart-word-button {
+    width: 100%;
+    min-height: 44px;
+    padding: 6px;
+    font-size: 0.88rem;
+  }
+
+  .audio-cue,
+  .volume-control {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    padding: 5px 8px;
+  }
+
+  .volume-control input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand-header {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .language-selector {
+    display: none;
+  }
+
+  .settings-button {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 44px;
+    padding-inline: 8px;
+  }
+
+  .settings-button > span:last-child {
+    display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  .keyboard {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .keyboard__key--space {
+    grid-column: 1 / span 3;
+  }
+
+  .keyboard__key--backspace {
+    grid-column: span 3;
+  }
+}
+
+@media (min-width: 800px) and (max-width: 899px) and (max-height: 650px) {
+  .lesson-shell {
+    padding-bottom: 8px;
+  }
+
+  .keyboard {
+    position: static;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 800px) and (max-height: 500px) {
+  .lesson-shell {
+    gap: 5px;
+    padding: 5px;
+  }
+
+  .brand-header h1 {
+    font-size: 2rem;
+  }
+
+  .brand-header p,
+  .stage-switcher,
+  .meaning-visual,
+  .lesson-instruction {
+    display: none;
+  }
+
+  .lesson-stage {
+    padding: 8px;
+  }
+
+  .lesson-focus {
+    gap: 4px;
+  }
+
+  .target-word {
+    font-size: 2.5rem;
+  }
+
+  .syllables {
+    font-size: 1.25rem;
+  }
+
+  .typing-box {
+    width: 44px;
+    font-size: 1.8rem;
+  }
+
+  .word-navigation__button {
+    min-height: 44px;
+  }
+
+  .keyboard {
+    position: fixed;
+    right: 5px;
+    bottom: 5px;
+    left: auto;
+    width: 500px;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 359px) and (max-height: 600px) {
+  .lesson-focus {
+    gap: 2px;
+  }
+
+  .word-navigation__button {
+    min-height: 44px;
+  }
+
+  .target-word {
+    font-size: 2.6rem;
+  }
+
+  .syllables {
+    gap: 8px;
+    font-size: 1.25rem;
+  }
+
+  .typing-box {
+    width: 44px;
+  }
+}
+
+.lesson-focus .completion-panel {
+  position: static;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  grid-column: auto;
+  grid-row: auto;
+  grid-template-columns: 1fr;
+  align-self: auto;
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.keyboard--complete .keyboard__key {
+  opacity: 0.65;
+  box-shadow: none;
+}
+
+.keyboard--complete .keyboard__row--actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(100%, 780px);
+}
+
+.keyboard__continue,
+.keyboard__support {
+  min-height: 54px;
+  padding: 6px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.keyboard__continue {
+  border: 2px solid #12512e;
+  border-radius: 13px;
+  background: #166039;
+  color: #fff;
+}
+
+.keyboard__support {
+  border: 2px solid #b7c9e7;
+  border-radius: 13px;
+  background: #fff;
+  color: #294d83;
+}
+
+.keyboard__support-short {
+  display: none;
+}
+
+.keyboard__continue:hover {
+  background: #104d2c;
+}
+
+.keyboard__continue:focus-visible {
+  outline: 4px solid #245ec1;
+  outline-offset: 3px;
+}
+
+.cue-row__short {
+  display: none;
+}
+
+.settings-panel .volume-control {
+  width: 100%;
+  box-shadow: none;
+}
+
+.settings-panel .volume-control input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .cue-row__long {
+    display: none;
+  }
+
+  .cue-row__short {
+    display: inline;
+  }
+}
+
+@media (max-width: 899px) {
+  .cue-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+
+  .cue-row .hear-word-button,
+  .cue-row .replay-button,
+  .cue-row .restart-word-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    min-height: 44px;
+    padding: 6px;
+    font-size: 0.88rem;
+  }
+
+  .cue-row .audio-cue {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+@media (max-width: 499px) {
+  .keyboard__support-long {
+    display: none;
+  }
+
+  .keyboard__support-short {
+    display: inline;
+  }
+
+  .keyboard__continue {
+    grid-column: span 3;
+  }
+
+  .keyboard__support {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 359px) {
+  .keyboard__continue {
+    grid-column: 1 / span 2;
+    font-size: 0.78rem;
+  }
+
+  .keyboard__support {
+    grid-column: span 2;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 420px) and (max-height: 720px) {
+  .lesson-focus .completion-panel {
+    gap: 0;
+    padding: 4px;
+  }
+
+  .completion-panel__message h2 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+
+  .completion-panel__message p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
 }
 

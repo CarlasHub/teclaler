@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { createBrowserAudioService } from "../audio/audioService";
 import { resolveAudioText } from "../audio/audioManifest";
 import { audioManifestsByLocale } from "../audio/manifest";
@@ -432,6 +439,10 @@ export function App({
   useEffect(() => {
     if (view === "lesson") restoreLearningFocus();
   }, [restoreLearningFocus, view]);
+
+  useLayoutEffect(() => {
+    (document.scrollingElement ?? document.documentElement).scrollTop = 0;
+  }, [view, currentItem.id]);
 
   const homeStages: HomeStage[] =
     selectedLocale === "pt-PT"

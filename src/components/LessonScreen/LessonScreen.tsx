@@ -6,7 +6,11 @@ import {
   type Ref,
 } from "react";
 import type { CurriculumItem, LessonLocale } from "../../curriculum/types";
-import { containsAccentKey, displayKey } from "../../engine/inputEngine";
+import {
+  PORTUGUESE_ACCENT_KEYS,
+  containsAccentKey,
+  displayKey,
+} from "../../engine/inputEngine";
 import type { LessonState } from "../../engine/lessonEngine";
 import { resolvePublicAssetPath } from "../../platform/publicPath";
 import { OnScreenKeyboard } from "../OnScreenKeyboard";
@@ -215,6 +219,7 @@ export function LessonScreen({
               </select>
             </label>
             <button
+              aria-label={copy.settings}
               aria-controls="settings-panel"
               aria-expanded={settingsOpen}
               aria-haspopup="dialog"
@@ -359,6 +364,28 @@ export function LessonScreen({
                   </fieldset>
                 </section>
 
+                <section
+                  aria-labelledby="settings-sound-title"
+                  className="settings-section"
+                >
+                  <h3 id="settings-sound-title">{copy.sound}</h3>
+                  <label className="volume-control">
+                    <span>{copy.sound}</span>
+                    <input
+                      aria-label={copy.soundVolume}
+                      max="1"
+                      min="0.25"
+                      onChange={(event) =>
+                        onAudioVolumeChange(event.currentTarget.valueAsNumber)
+                      }
+                      step="0.05"
+                      type="range"
+                      value={audioVolume}
+                    />
+                    <strong>{Math.round(audioVolume * 100)}%</strong>
+                  </label>
+                </section>
+
                 <p className="settings-privacy-note">{copy.privacyNote}</p>
                 <section
                   aria-labelledby="settings-progress-title"
@@ -482,11 +509,16 @@ export function LessonScreen({
           {!lessonState.completed ? (
             <div className="cue-row" aria-live="polite">
               <button
+                aria-label={copy.hearWord}
                 className="hear-word-button"
                 onClick={onHearWord}
                 type="button"
               >
-                <span aria-hidden="true">♫</span> {copy.hearWord}
+                <span aria-hidden="true">♫</span>
+                <span className="cue-row__long">{copy.hearWord}</span>
+                <span className="cue-row__short" aria-hidden="true">
+                  {lessonLocale === "en-GB" ? "Hear" : "Ouvir"}
+                </span>
               </button>
               {audioCue ? (
                 <div className="audio-cue">
@@ -495,13 +527,17 @@ export function LessonScreen({
                 </div>
               ) : null}
               <button
+                aria-label={copy.replay}
                 aria-describedby="replay-description"
                 className="replay-button"
                 disabled={replayDisabled}
                 onClick={onReplay}
                 type="button"
               >
-                {copy.replay}
+                <span className="cue-row__long">{copy.replay}</span>
+                <span className="cue-row__short" aria-hidden="true">
+                  {lessonLocale === "en-GB" ? "Replay" : "Repetir"}
+                </span>
               </button>
               <span className="visually-hidden" id="replay-description">
                 {replayDisabled
@@ -509,28 +545,29 @@ export function LessonScreen({
                   : copy.replayEnabled(replayText)}
               </span>
               <button
+                aria-label={copy.restartWord}
                 className="restart-word-button"
                 onClick={onRestartWord}
                 type="button"
               >
-                {copy.restartWord}
+                <span className="cue-row__long">{copy.restartWord}</span>
+                <span className="cue-row__short" aria-hidden="true">
+                  {lessonLocale === "en-GB" ? "Restart" : "Reiniciar"}
+                </span>
               </button>
-              <label className="volume-control">
-                <span>{copy.sound}</span>
-                <input
-                  aria-label={copy.soundVolume}
-                  max="1"
-                  min="0.25"
-                  onChange={(event) =>
-                    onAudioVolumeChange(event.currentTarget.valueAsNumber)
-                  }
-                  step="0.05"
-                  type="range"
-                  value={audioVolume}
-                />
-                <strong>{Math.round(audioVolume * 100)}%</strong>
-              </label>
             </div>
+          ) : null}
+
+          {lessonState.completed ? (
+            <section
+              className="completion-panel"
+              aria-labelledby="completion-title"
+            >
+              <div className="completion-panel__message" role="status">
+                <h2 id="completion-title">{completionTitle}</h2>
+                <p id="completion-message">{completionBody}</p>
+              </div>
+            </section>
           ) : null}
 
           {audioUnavailable ? (
@@ -571,43 +608,34 @@ export function LessonScreen({
         </p>
       </section>
 
-      {lessonState.completed ? (
-        <section
-          className="completion-panel"
-          aria-labelledby="completion-title"
-        >
-          <div className="completion-panel__message" role="status">
-            <h2 id="completion-title">{completionTitle}</h2>
-            <p id="completion-message">{completionBody}</p>
-          </div>
-          <div className="completion-panel__actions">
-            <button
-              aria-describedby="completion-message"
-              className="completion-panel__primary"
-              onClick={completionAction}
-              ref={completionActionRef}
-              type="button"
-            >
-              {completionActionText}
-              <span aria-hidden="true"> →</span>
-            </button>
-            <button onClick={onHearWord} type="button">
-              {copy.hearAgain}
-            </button>
-            <button onClick={onRestartWord} type="button">
-              {copy.restartWord}
-            </button>
-          </div>
-        </section>
-      ) : (
-        <OnScreenKeyboard
-          onKeyPress={onKeyPress}
-          pressedKey={pressedKey}
-          rejectedKey={rejectedKey}
-          showAccentRow={containsAccentKey(item.targetSequence)}
-          locale={lessonLocale}
-        />
-      )}
+      <OnScreenKeyboard
+        onKeyPress={onKeyPress}
+        pressedKey={pressedKey}
+        rejectedKey={rejectedKey}
+        showAccentRow={containsAccentKey(item.targetSequence)}
+        accentKeys={item.targetSequence.filter((key) =>
+          PORTUGUESE_ACCENT_KEYS.some((accent) => accent.value === key),
+        )}
+        locale={lessonLocale}
+        completionAction={
+          lessonState.completed
+            ? {
+                label: completionActionText,
+                onClick: completionAction,
+                descriptionId: "completion-message",
+                buttonRef: completionActionRef,
+                hearAgainLabel: copy.hearAgain,
+                onHearAgain: onHearWord,
+                hearAgainShortLabel:
+                  lessonLocale === "en-GB" ? "Hear" : "Ouvir",
+                restartLabel: copy.restartWord,
+                onRestart: onRestartWord,
+                restartShortLabel:
+                  lessonLocale === "en-GB" ? "Restart" : "Reiniciar",
+              }
+            : undefined
+        }
+      />
     </main>
   );
 }

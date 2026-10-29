@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties } from "react";
+import { useRef, type CSSProperties, type Ref } from "react";
 import {
   PORTUGUESE_ACCENT_KEYS,
   PORTUGUESE_KEYBOARD_ROWS,
@@ -14,6 +14,19 @@ interface OnScreenKeyboardProps {
   pressedKey?: string | null;
   rejectedKey?: string | null;
   showAccentRow?: boolean;
+  accentKeys?: readonly string[];
+  completionAction?: {
+    label: string;
+    onClick: () => void;
+    descriptionId: string;
+    buttonRef: Ref<HTMLButtonElement>;
+    hearAgainLabel: string;
+    onHearAgain: () => void;
+    hearAgainShortLabel: string;
+    restartLabel: string;
+    onRestart: () => void;
+    restartShortLabel: string;
+  };
 }
 
 export function OnScreenKeyboard({
@@ -22,17 +35,22 @@ export function OnScreenKeyboard({
   pressedKey = null,
   rejectedKey = null,
   showAccentRow = false,
+  accentKeys,
+  completionAction,
 }: OnScreenKeyboardProps) {
   const touchHandledKeyRef = useRef<string | null>(null);
   const baseRows =
     locale === "en-GB" ? getEnglishKeyboardRows() : PORTUGUESE_KEYBOARD_ROWS;
+  const visibleAccentKeys = accentKeys
+    ? PORTUGUESE_ACCENT_KEYS.filter((key) => accentKeys.includes(key.value))
+    : PORTUGUESE_ACCENT_KEYS;
   const rows = showAccentRow
-    ? [...baseRows.slice(0, 3), PORTUGUESE_ACCENT_KEYS, baseRows[3]]
+    ? [...baseRows.slice(0, 3), visibleAccentKeys, baseRows[3]]
     : baseRows;
 
   return (
     <section
-      className="keyboard"
+      className={`keyboard${completionAction ? " keyboard--complete" : ""}`}
       aria-label={locale === "en-GB" ? "English keyboard" : "Teclado português"}
     >
       {rows.map((row, rowIndex) => (
@@ -41,60 +59,101 @@ export function OnScreenKeyboard({
           key={rowIndex}
           style={{ "--key-count": row.length } as CSSProperties}
         >
-          {row.map((key) => {
-            const isRejected = key.value === rejectedKey;
-            const isPressed = !rejectedKey && key.value === pressedKey;
-            const normalized = normalizeTouchKey(key.value);
-            const ariaLabel =
-              key.kind === "space" || key.kind === "backspace"
-                ? getActionLabel(locale, key.value, key.label)
-                : `${locale === "en-GB" ? "Key" : "Tecla"} ${displayKey(key.value)}`;
-            const emitKey = () => {
-              if (normalized) {
-                onKeyPress(normalized);
-              }
-            };
-
-            return (
+          {completionAction && getRowKind(row) === "actions" ? (
+            <>
               <button
-                aria-label={ariaLabel}
-                aria-pressed={isPressed || isRejected}
-                className={`keyboard__key keyboard__key--${key.kind ?? "letter"}${isPressed ? " keyboard__key--pressed" : ""}${isRejected ? " keyboard__key--rejected" : ""}`}
-                draggable={false}
-                key={key.value}
-                onClick={() => {
-                  if (touchHandledKeyRef.current === key.value) {
-                    touchHandledKeyRef.current = null;
-                    return;
-                  }
-
-                  emitKey();
-                }}
-                onKeyDown={(event) => {
-                  if (isKeyboardActivationKey(event.key)) {
-                    event.preventDefault();
-                    emitKey();
-                  }
-                }}
-                onPointerDown={(event) => {
-                  if (
-                    event.pointerType === "touch" ||
-                    event.pointerType === "pen"
-                  ) {
-                    event.preventDefault();
-                    touchHandledKeyRef.current = key.value;
-                    emitKey();
-                    return;
-                  }
-
-                  touchHandledKeyRef.current = null;
-                }}
+                aria-describedby={completionAction.descriptionId}
+                className="keyboard__continue"
+                onClick={completionAction.onClick}
+                ref={completionAction.buttonRef}
                 type="button"
               >
-                {getActionLabel(locale, key.value, key.label)}
+                {completionAction.label} <span aria-hidden="true">→</span>
               </button>
-            );
-          })}
+              <button
+                aria-label={completionAction.hearAgainLabel}
+                className="keyboard__support"
+                onClick={completionAction.onHearAgain}
+                type="button"
+              >
+                <span className="keyboard__support-long">
+                  {completionAction.hearAgainLabel}
+                </span>
+                <span className="keyboard__support-short" aria-hidden="true">
+                  {completionAction.hearAgainShortLabel}
+                </span>
+              </button>
+              <button
+                aria-label={completionAction.restartLabel}
+                className="keyboard__support"
+                onClick={completionAction.onRestart}
+                type="button"
+              >
+                <span className="keyboard__support-long">
+                  {completionAction.restartLabel}
+                </span>
+                <span className="keyboard__support-short" aria-hidden="true">
+                  {completionAction.restartShortLabel}
+                </span>
+              </button>
+            </>
+          ) : (
+            row.map((key) => {
+              const isRejected = key.value === rejectedKey;
+              const isPressed = !rejectedKey && key.value === pressedKey;
+              const normalized = normalizeTouchKey(key.value);
+              const ariaLabel =
+                key.kind === "space" || key.kind === "backspace"
+                  ? getActionLabel(locale, key.value, key.label)
+                  : `${locale === "en-GB" ? "Key" : "Tecla"} ${displayKey(key.value)}`;
+              const emitKey = () => {
+                if (normalized) {
+                  onKeyPress(normalized);
+                }
+              };
+
+              return (
+                <button
+                  aria-label={ariaLabel}
+                  aria-pressed={isPressed || isRejected}
+                  className={`keyboard__key keyboard__key--${key.kind ?? "letter"}${isPressed ? " keyboard__key--pressed" : ""}${isRejected ? " keyboard__key--rejected" : ""}`}
+                  draggable={false}
+                  disabled={Boolean(completionAction)}
+                  key={key.value}
+                  onClick={() => {
+                    if (touchHandledKeyRef.current === key.value) {
+                      touchHandledKeyRef.current = null;
+                      return;
+                    }
+
+                    emitKey();
+                  }}
+                  onKeyDown={(event) => {
+                    if (isKeyboardActivationKey(event.key)) {
+                      event.preventDefault();
+                      emitKey();
+                    }
+                  }}
+                  onPointerDown={(event) => {
+                    if (
+                      event.pointerType === "touch" ||
+                      event.pointerType === "pen"
+                    ) {
+                      event.preventDefault();
+                      touchHandledKeyRef.current = key.value;
+                      emitKey();
+                      return;
+                    }
+
+                    touchHandledKeyRef.current = null;
+                  }}
+                  type="button"
+                >
+                  {getActionLabel(locale, key.value, key.label)}
+                </button>
+              );
+            })
+          )}
         </div>
       ))}
     </section>
