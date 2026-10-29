@@ -16,6 +16,34 @@ import {
 const MALA_ID = "word-mala-pt-pt";
 
 describe("word completion flow", () => {
+  it("opens a clear home journey and lets the learner choose a stage", async () => {
+    const user = userEvent.setup();
+    window.localStorage.clear();
+    render(
+      <App
+        audioService={createFakeAudioService()}
+        progressStore={createMemoryProgressStore()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Lê. Escreve. Descobre." }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Começar a aprender" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Etapa 2 Sílabas simples/ }),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: /Etapa 2 Sílabas simples/ }),
+    );
+    expect(screen.getByLabelText("Palavra alvo MESA")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Etapas" }));
+    expect(
+      screen.getByRole("heading", { name: "Escolhe uma etapa" }),
+    ).toBeInTheDocument();
+  });
   it("renders CASA from curriculum data with syllables and disabled next action", () => {
     renderApp(createFakeAudioService());
 
@@ -638,7 +666,9 @@ describe("word completion flow", () => {
   it("resumes the selected stage and word on this device", async () => {
     const user = userEvent.setup();
     window.localStorage.clear();
-    const firstVisit = render(<App audioService={createFakeAudioService()} />);
+    const firstVisit = render(
+      <App audioService={createFakeAudioService()} initialView="lesson" />,
+    );
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Etapa de aprendizagem" }),
       "2",
@@ -650,7 +680,9 @@ describe("word completion flow", () => {
     expect(screen.getByLabelText("Palavra alvo LATA")).toBeInTheDocument();
     firstVisit.unmount();
 
-    render(<App audioService={createFakeAudioService()} />);
+    render(
+      <App audioService={createFakeAudioService()} initialView="lesson" />,
+    );
     expect(
       screen.getByRole("combobox", { name: "Etapa de aprendizagem" }),
     ).toHaveValue("2");
@@ -720,6 +752,11 @@ describe("word completion flow", () => {
     expect(
       screen.getByRole("button", { name: "Próxima palavra" }),
     ).toBeDisabled();
+    expect(
+      screen.getByRole("heading", { name: "Etapa concluída!" }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Etapa seguinte" }));
+    expect(screen.getByLabelText("Palavra alvo MESA")).toBeInTheDocument();
   });
 
   it("completes every starter word with the on-screen keyboard", async () => {
@@ -810,6 +847,7 @@ function renderApp(
       audioService={audioService}
       initialItemId={options.initialItemId}
       initialLocale={options.initialLocale}
+      initialView="lesson"
       progressStore={createMemoryProgressStore()}
     />,
   );
