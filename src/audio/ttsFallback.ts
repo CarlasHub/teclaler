@@ -22,6 +22,7 @@ const FEMININE_PT_BR_VOICE_NAMES = [
   "google português do brasil",
   "google portuguese brazil",
 ];
+const PREFERRED_EN_GB_VOICE_NAMES = ["sonia", "hazel", "susan"];
 
 let cachedVoices: SpeechSynthesisVoice[] = [];
 
@@ -137,6 +138,15 @@ export function selectPreferredVoice(
 
     if (feminineVoice) {
       return feminineVoice;
+    }
+  }
+
+  if (normalizedLocale === "en-gb") {
+    for (const voiceName of PREFERRED_EN_GB_VOICE_NAMES) {
+      const preferredVoice = exactLocaleVoices.find((voice) =>
+        normalizeVoiceName(voice.name).includes(voiceName),
+      );
+      if (preferredVoice) return preferredVoice;
     }
   }
 

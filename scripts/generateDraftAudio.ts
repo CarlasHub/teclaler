@@ -1,7 +1,16 @@
 import { spawn } from "node:child_process";
 import { mkdir, stat } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { ptPTAudioManifest } from "../src/audio/manifest";
+import { audioManifestsByLocale } from "../src/audio/manifest";
+import type { LessonLocale } from "../src/curriculum/types";
+
+const localeArgument = process.argv.find((value) => value.startsWith("--locale="));
+const locale = (localeArgument?.slice("--locale=".length) ?? "pt-PT") as LessonLocale;
+const manifest = audioManifestsByLocale[locale];
+if (!manifest) {
+  throw new Error(`Unsupported audio locale: ${locale}`);
+}
+const force = process.argv.includes("--force");
 
 const executable = process.env.PIPER_EXECUTABLE;
 const model = process.env.PIPER_MODEL;
@@ -12,12 +21,14 @@ if (!executable || !model) {
 }
 
 const pending: { text: string; output_file: string }[] = [];
-for (const asset of ptPTAudioManifest.assets) {
+for (const asset of manifest.assets) {
   const file = join(process.cwd(), "public", asset.path.slice(1));
-  try {
-    if ((await stat(file)).size > 2000) continue;
-  } catch {
-    // A missing file needs synthesis.
+  if (!force) {
+    try {
+      if ((await stat(file)).size > 2000) continue;
+    } catch {
+      // A missing file needs synthesis.
+    }
   }
   await mkdir(dirname(file), { recursive: true });
   pending.push({ text: asset.text, output_file: file });
@@ -53,4 +64,4 @@ for (const item of pending) {
     throw new Error(`Draft audio is empty: ${item.output_file}`);
   }
 }
-console.log(`Generated ${pending.length} pt-PT draft WAV clips locally.`);
+console.log(`Generated ${pending.length} ${locale} draft WAV clips locally.`);
