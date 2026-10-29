@@ -791,10 +791,10 @@ button:focus-visible,
 
 .lesson-stage {
   display: grid;
-  grid-template-columns: minmax(180px, 300px) 1fr;
+  grid-template-columns: minmax(110px, 160px) 1fr;
   align-items: center;
-  gap: 28px;
-  padding: 34px;
+  gap: 20px;
+  padding: 24px;
   border: 1px solid #dce7f6;
   border-radius: 28px;
   background: rgb(255 255 255 / 88%);
@@ -810,12 +810,12 @@ button:focus-visible,
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 140px;
 }
 
 .meaning-visual img {
   display: block;
-  width: min(100%, 280px);
+  width: min(100%, 132px);
   height: auto;
 }
 
@@ -1235,9 +1235,9 @@ button:focus-visible,
 
 @media (max-width: 920px) {
   .lesson-stage {
-    grid-template-columns: minmax(120px, 200px) 1fr;
-    gap: 20px;
-    padding: 26px;
+    grid-template-columns: minmax(100px, 140px) 1fr;
+    gap: 16px;
+    padding: 20px;
   }
 
   .lesson-stage--text-only {
@@ -1245,11 +1245,11 @@ button:focus-visible,
   }
 
   .meaning-visual {
-    min-height: 170px;
+    min-height: 120px;
   }
 
   .meaning-visual img {
-    width: min(100%, 210px);
+    width: min(100%, 116px);
   }
 
   .lesson-status {
@@ -1619,10 +1619,6 @@ button:focus-visible,
 }
 
 @media (max-width: 420px) and (max-height: 600px) {
-  .meaning-visual {
-    display: none;
-  }
-
   .lesson-shell {
     gap: 5px;
   }
@@ -1970,6 +1966,25 @@ button:focus-visible,
 
   .typing-box {
     width: 44px;
+  }
+}
+
+@media (max-width: 899px) and (max-height: 650px) {
+  .lesson-stage {
+    position: relative;
+  }
+
+  .meaning-visual {
+    position: absolute;
+    top: 75px;
+    left: 10px;
+    display: flex;
+    width: 32px;
+    min-height: 0;
+  }
+
+  .meaning-visual img {
+    width: 32px;
   }
 }
 

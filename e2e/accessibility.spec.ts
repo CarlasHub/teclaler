@@ -334,6 +334,9 @@ test("the full touch keyboard and typing area stay visible across screen sizes",
       .getByRole("button", { name: /Começar a aprender|Continuar em CASA/ })
       .click();
     const target = await page.getByLabel("Palavra alvo CASA").boundingBox();
+    const illustration = await page
+      .getByRole("img", { name: "Uma casa simples." })
+      .boundingBox();
     const boxes = await page
       .getByRole("list", { name: "Letras da palavra CASA" })
       .boundingBox();
@@ -346,7 +349,7 @@ test("the full touch keyboard and typing area stay visible across screen sizes",
     const hear = await page
       .getByRole("button", { name: "Ouvir palavra" })
       .boundingBox();
-    for (const bounds of [target, boxes, keyboard, key, hear]) {
+    for (const bounds of [target, illustration, boxes, keyboard, key, hear]) {
       expect(bounds, JSON.stringify(viewport)).not.toBeNull();
       expect(bounds!.x, JSON.stringify(viewport)).toBeGreaterThanOrEqual(0);
       expect(bounds!.y, JSON.stringify(viewport)).toBeGreaterThanOrEqual(0);

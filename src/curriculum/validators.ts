@@ -138,7 +138,7 @@ function validateCurriculumItem(
     });
   }
 
-  if (item.difficulty === 1 && !item.imageAsset?.trim()) {
+  if (!item.imageAsset?.trim()) {
     issues.push({
       code: "curriculum.missing_image_asset",
       itemId: item.id,
@@ -155,7 +155,7 @@ function validateCurriculumItem(
     });
   }
 
-  if ((item.difficulty === 1 || item.imageAsset) && !item.imageAlt?.trim()) {
+  if (!item.imageAlt?.trim()) {
     issues.push({
       code: "curriculum.missing_image_alt",
       itemId: item.id,

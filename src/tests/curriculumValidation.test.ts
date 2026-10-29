@@ -158,6 +158,17 @@ describe("pt-PT starter curriculum", () => {
     }
   });
 
+  it("gives every Year 1 practice word a local illustration and accessible description", () => {
+    expect(ptPTYearOnePack.items).toHaveLength(56);
+    for (const item of ptPTYearOnePack.items) {
+      expect(item.imageAsset, item.id).toMatch(/^\/images\/[^/]+\.svg$/u);
+      expect(item.imageAlt?.trim(), item.id).not.toBe("");
+    }
+    expect(validateCurriculumPack(ptPTYearOnePack, ptPTAudioManifest)).toEqual(
+      [],
+    );
+  });
+
   it("uses reviewed Portuguese letter audio text without adding accents to plain vowels", () => {
     const expectedPtPTLetterNames = {
       "pt-PT.letter.a": "a",

@@ -1,5 +1,6 @@
 import { ptPTStarterItems } from "./ptPTPack";
 import type { CurriculumItem, CurriculumPack } from "./types";
+import { getWordIllustration } from "./wordIllustrations";
 
 interface WordDraft {
   text: string;
@@ -123,6 +124,7 @@ export const ptPTPracticeItems: CurriculumItem[] = wordDrafts.map((draft) => {
       word: `pt-PT.word.${draft.text}`,
     },
     difficulty: draft.stage,
+    ...getWordIllustration(draft.text),
     status: "pedagogy_review",
   };
 });
