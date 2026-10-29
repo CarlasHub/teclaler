@@ -28,7 +28,6 @@ interface LessonScreenProps {
   feedbackMessage: string | null;
   learningInputRef: Ref<HTMLElement>;
   localCompletionCount: number;
-  canGoNext: boolean;
   hasNextWord: boolean;
   canGoPrevious: boolean;
   onAudioVolumeChange: (volume: number) => void;
@@ -65,7 +64,6 @@ export function LessonScreen({
   feedbackMessage,
   learningInputRef,
   localCompletionCount,
-  canGoNext,
   hasNextWord,
   canGoPrevious,
   onAudioVolumeChange,
@@ -397,12 +395,42 @@ export function LessonScreen({
         ) : null}
 
         <div className="lesson-focus">
-          <p className="lesson-focus__label">{copy.wordLabel}</p>
-          <div
-            className="target-word"
-            aria-label={`${copy.targetWordLabel} ${item.displayText}`}
-          >
-            {item.displayText}
+          <div className="word-navigation">
+            <button
+              aria-label={copy.previousWord}
+              className="word-navigation__button"
+              disabled={!canGoPrevious}
+              onClick={onPreviousLesson}
+              type="button"
+            >
+              <span aria-hidden="true" className="word-navigation__arrow">
+                ←
+              </span>
+              <span>{copy.previous}</span>
+            </button>
+            <div className="word-navigation__target">
+              <p className="lesson-focus__label">{copy.wordLabel}</p>
+              <div
+                className="target-word"
+                aria-label={`${copy.targetWordLabel} ${item.displayText}`}
+              >
+                {item.displayText}
+              </div>
+            </div>
+            <button
+              aria-label={
+                lessonState.completed ? copy.nextWordArrow : copy.skipToNextWord
+              }
+              className="word-navigation__button word-navigation__button--next"
+              disabled={!hasNextWord}
+              onClick={lessonState.completed ? onNextLesson : onSkipWord}
+              type="button"
+            >
+              <span aria-hidden="true" className="word-navigation__arrow">
+                →
+              </span>
+              <span>{copy.nextShort}</span>
+            </button>
           </div>
 
           <div
@@ -543,36 +571,6 @@ export function LessonScreen({
         </p>
       </section>
 
-      <nav className="lesson-nav" aria-label={copy.lessonNavigationLabel}>
-        <button
-          className="lesson-nav__button"
-          disabled={!canGoPrevious}
-          onClick={onPreviousLesson}
-          type="button"
-        >
-          {copy.previous}
-        </button>
-        {hasNextWord && !lessonState.completed ? (
-          <button
-            className="lesson-nav__button lesson-nav__button--skip"
-            onClick={onSkipWord}
-            type="button"
-          >
-            {copy.skipWord}
-          </button>
-        ) : null}
-        {!lessonState.completed ? (
-          <button
-            className="lesson-nav__button lesson-nav__button--primary"
-            disabled={!canGoNext}
-            onClick={onNextLesson}
-            type="button"
-          >
-            {copy.nextWord}
-          </button>
-        ) : null}
-      </nav>
-
       {lessonState.completed ? (
         <section
           className="completion-panel"
@@ -693,6 +691,10 @@ function getLessonCopy(locale: LessonLocale) {
       localMode: "Local mode",
       localProgress: (progress: string) => `On this device: ${progress}`,
       nextWord: "Next word",
+      nextWordArrow: "Go to next word",
+      previousWord: "Previous word",
+      nextShort: "Next",
+      skipToNextWord: "Next word without finishing this one",
       wordSuccessTitle: "Well done!",
       wordSuccessBody: (word: string) => `${word} is complete.`,
       hearAgain: "Hear the word again",
@@ -757,6 +759,10 @@ function getLessonCopy(locale: LessonLocale) {
     localMode: "Modo local",
     localProgress: (progress: string) => `Neste dispositivo: ${progress}`,
     nextWord: "Próxima palavra",
+    nextWordArrow: "Palavra seguinte",
+    previousWord: "Palavra anterior",
+    nextShort: "Seguinte",
+    skipToNextWord: "Palavra seguinte sem concluir esta",
     wordSuccessTitle: "Muito bem!",
     wordSuccessBody: (word: string) => `${word} está completa.`,
     hearAgain: "Ouvir a palavra outra vez",
