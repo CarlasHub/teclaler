@@ -1,6 +1,10 @@
 import { getPublicBasePath, resolvePublicAssetPath } from "./publicPath";
 
 export function registerServiceWorker(): void {
+  // Tauri embeds the same build locally; its custom protocol needs no worker.
+  if (window.location.hostname === "tauri.localhost") {
+    return;
+  }
   if (!("serviceWorker" in navigator)) {
     return;
   }

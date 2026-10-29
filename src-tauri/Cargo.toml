@@ -1,0 +1,20 @@
+[package]
+name = "teclaler"
+version = "0.1.0"
+description = "A local-first reading and typing app for children"
+authors = ["Carla's Hub"]
+repository = "https://github.com/CarlasHub/teclaler"
+edition = "2024"
+rust-version = "1.90"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "teclaler_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4" }
+
+[dependencies]
+tauri = { version = "2.12.5" }
