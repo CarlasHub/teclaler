@@ -14,6 +14,7 @@
     "validate:content": "tsx scripts/validateContent.ts",
     "audio:generate-draft": "tsx scripts/generateDraftAudio.ts",
     "audio:generate-en-gb": "tsx scripts/generateDraftAudio.ts --locale=en-GB --force",
+    "audio:generate-pt-pt": "tsx scripts/generateDraftAudio.ts --locale=pt-PT --force",
     "images:import": "tsx scripts/importWordIllustrations.ts",
     "format": "prettier --write \"index.html\" \"package.json\" \"tsconfig*.json\" \"vite.config.ts\" \"playwright*.config.ts\" \"vitest.setup.ts\" \"e2e/**/*.ts\" \"qa/**/*.ts\" \"scripts/**/*.ts\" \"src/**/*.{ts,tsx,css}\" \"public/**/*.{json,js}\" \"README.md\"",
     "preview": "vite preview --host 0.0.0.0",

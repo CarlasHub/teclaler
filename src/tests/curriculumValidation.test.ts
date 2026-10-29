@@ -158,6 +158,18 @@ describe("pt-PT starter curriculum", () => {
     }
   });
 
+  it("rejects a second recorded voice in one language", () => {
+    const mixedVoiceManifest = {
+      ...ptPTAudioManifest,
+      assets: ptPTAudioManifest.assets.map((asset, index) =>
+        index === 0 ? { ...asset, voice: "Another voice" } : asset,
+      ),
+    };
+    expect(validateAudioManifest(mixedVoiceManifest)).toContainEqual(
+      expect.objectContaining({ code: "audio.mixed_voices" }),
+    );
+  });
+
   it("gives every Year 1 practice word a local illustration and accessible description", () => {
     expect(ptPTYearOnePack.items).toHaveLength(56);
     for (const item of ptPTYearOnePack.items) {
@@ -196,6 +208,23 @@ describe("pt-PT starter curriculum", () => {
     }
   });
 
+  it("uses one recorded voice per language in every audio asset", () => {
+    for (const [manifest, locale, voice] of [
+      [ptPTAudioManifest, "pt-PT", "Tugão"],
+      [ptBRAudioManifest, "pt-BR", "Luciana"],
+      [enGBAudioManifest, "en-GB", "Cori"],
+    ] as const) {
+      expect(
+        manifest.assets.every(
+          (asset) =>
+            asset.locale === locale &&
+            asset.path.startsWith(`/audio/${locale}/`) &&
+            asset.voice === voice,
+        ),
+      ).toBe(true);
+    }
+  });
+
   it("keeps pt-BR placeholder audio on Brazilian Portuguese voice assets", () => {
     expect(
       ptBRAudioManifest.assets.every(
@@ -207,13 +236,13 @@ describe("pt-PT starter curriculum", () => {
     ).toBe(true);
   });
 
-  it("keeps en-GB placeholder audio in English paths with an English voice hint", () => {
+  it("keeps en-GB placeholder audio in English paths with the Cori voice", () => {
     expect(
       enGBAudioManifest.assets.every(
         (asset) =>
           asset.locale === "en-GB" &&
           asset.path.startsWith("/audio/en-GB/") &&
-          asset.voice === "Sonia",
+          asset.voice === "Cori",
       ),
     ).toBe(true);
     expect(resolveAudioAsset(enGBAudioManifest, "en-GB.letter.h")?.text).toBe(
