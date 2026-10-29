@@ -492,7 +492,6 @@ export function App({
     <LessonScreen
       audioCue={audioCue}
       audioUnavailable={audioUnavailable}
-      canGoNext={canGoNext && lessonState.completed}
       hasNextWord={canGoNext}
       canGoPrevious={canGoPrevious}
       feedbackMessage={feedbackMessage}

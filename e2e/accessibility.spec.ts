@@ -78,7 +78,9 @@ test("lesson controls support listening, restarting and trying another word", as
   await expect(page.getByLabel("Letra 1 de 4, C")).toBeVisible();
   await page.getByRole("button", { name: "Recomeçar palavra" }).click();
   await expect(page.getByLabel("Letra 1 de 4, vazia")).toBeVisible();
-  await page.getByRole("button", { name: "Tentar outra palavra" }).click();
+  await page
+    .getByRole("button", { name: "Palavra seguinte sem concluir esta" })
+    .click();
   await expect(page.getByLabel("Palavra alvo MALA")).toBeVisible();
   await expect(page.getByText("Neste dispositivo: 0 conclusões")).toBeVisible();
 });
@@ -223,5 +225,49 @@ test("mobile lesson keeps the word and typing position above the keyboard", asyn
         page.getByRole("button", { name: "Ouvir palavra" }),
       ).toBeInViewport();
     }
+  }
+});
+
+test("word arrows and typing area work across iPad layouts", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 820, height: 1180 },
+    { width: 1180, height: 820 },
+    { width: 600, height: 820 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: /Começar a aprender|Continuar em CASA/ })
+      .click();
+    const previous = page.getByRole("button", { name: "Palavra anterior" });
+    const next = page.getByRole("button", {
+      name: "Palavra seguinte sem concluir esta",
+    });
+    const boxes = page.getByRole("list", { name: "Letras da palavra CASA" });
+    const keyboard = page.getByRole("region", { name: "Teclado português" });
+    await expect(previous).toBeDisabled();
+    await expect(next).toBeInViewport();
+    await expect(boxes).toBeInViewport();
+    await expect(page.getByRole("button", { name: "Apagar" })).toBeInViewport();
+    const arrowBounds = await next.boundingBox();
+    expect(arrowBounds!.width).toBeGreaterThanOrEqual(44);
+    expect(arrowBounds!.height).toBeGreaterThanOrEqual(44);
+    const boxBounds = await boxes.boundingBox();
+    const keyboardBounds = await keyboard.boundingBox();
+    const overlap =
+      boxBounds!.x < keyboardBounds!.x + keyboardBounds!.width &&
+      boxBounds!.x + boxBounds!.width > keyboardBounds!.x &&
+      boxBounds!.y < keyboardBounds!.y + keyboardBounds!.height &&
+      boxBounds!.y + boxBounds!.height > keyboardBounds!.y;
+    expect(overlap).toBe(false);
+    await next.click();
+    await expect(page.getByLabel("Palavra alvo MALA")).toBeVisible();
+    await page.getByRole("button", { name: "Palavra anterior" }).click();
+    await expect(page.getByLabel("Palavra alvo CASA")).toBeVisible();
+    await page.evaluate(() =>
+      localStorage.removeItem("teclaler.lastItem.pt-PT.1"),
+    );
   }
 });

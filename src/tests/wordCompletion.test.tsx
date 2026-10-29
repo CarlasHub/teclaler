@@ -44,7 +44,7 @@ describe("word completion flow", () => {
       screen.getByRole("heading", { name: "Escolhe uma etapa" }),
     ).toBeInTheDocument();
   });
-  it("renders CASA from curriculum data with syllables and disabled next action", () => {
+  it("renders CASA with visible previous and next arrows", () => {
     renderApp(createFakeAudioService());
 
     expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
@@ -59,8 +59,13 @@ describe("word completion flow", () => {
       "keyboard__key--pressed",
     );
     expect(
-      screen.getByRole("button", { name: "Próxima palavra" }),
+      screen.getByRole("button", { name: "Palavra anterior" }),
     ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Palavra seguinte sem concluir esta",
+      }),
+    ).toBeEnabled();
   });
 
   it("lets the learner hear and restart a word without losing stage progress", async () => {
@@ -93,7 +98,9 @@ describe("word completion flow", () => {
     fireEvent.keyDown(window, { key: "C" });
 
     await user.click(
-      screen.getByRole("button", { name: "Tentar outra palavra" }),
+      screen.getByRole("button", {
+        name: "Palavra seguinte sem concluir esta",
+      }),
     );
     expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
     expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
@@ -101,8 +108,10 @@ describe("word completion flow", () => {
       screen.getByText("Neste dispositivo: 0 conclusões"),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Próxima palavra" }),
-    ).toBeDisabled();
+      screen.getByRole("button", {
+        name: "Palavra seguinte sem concluir esta",
+      }),
+    ).toBeEnabled();
   });
 
   it("focuses a visible completion action and advances with Enter", async () => {
@@ -157,7 +166,9 @@ describe("word completion flow", () => {
     renderApp(createFakeAudioService());
     for (let index = 0; index < 4; index++) {
       await user.click(
-        screen.getByRole("button", { name: "Tentar outra palavra" }),
+        screen.getByRole("button", {
+          name: "Palavra seguinte sem concluir esta",
+        }),
       );
     }
     expect(screen.getByLabelText("Palavra alvo BOLA")).toBeInTheDocument();
@@ -205,7 +216,9 @@ describe("word completion flow", () => {
     expect(screen.getByLabelText("Sílabas ca sa")).toBeInTheDocument();
     expect(screen.getByLabelText("Letras da palavra CASA")).toBeInTheDocument();
     expect(screen.getByLabelText("Progresso da lição")).toBeInTheDocument();
-    expect(screen.getByLabelText("Navegação da lição")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Palavra anterior" }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText("Teclado português")).toBeInTheDocument();
     expect(document.querySelectorAll("a")).toHaveLength(0);
   });
@@ -345,7 +358,11 @@ describe("word completion flow", () => {
     expect(screen.getByRole("button", { name: "Key H" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Tecla Ç" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Key Ç" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Next word" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Next word without finishing this one",
+      }),
+    ).toBeEnabled();
 
     const settingsButton = screen.getByRole("button", { name: "Settings" });
     await user.click(settingsButton);
@@ -517,8 +534,10 @@ describe("word completion flow", () => {
     expect(pressedWrongKey).toHaveAttribute("aria-pressed", "true");
     expect(pressedWrongKey).toHaveClass("keyboard__key--rejected");
     expect(
-      screen.getByRole("button", { name: "Próxima palavra" }),
-    ).toBeDisabled();
+      screen.getByRole("button", {
+        name: "Palavra seguinte sem concluir esta",
+      }),
+    ).toBeEnabled();
   });
 
   it("deletes with the Apagar button and allows the child to retype", async () => {
@@ -590,8 +609,10 @@ describe("word completion flow", () => {
       "keyboard__key--pressed",
     );
     expect(
-      screen.getByRole("button", { name: "Próxima palavra" }),
-    ).toBeDisabled();
+      screen.getByRole("button", {
+        name: "Palavra seguinte sem concluir esta",
+      }),
+    ).toBeEnabled();
 
     fireEvent.keyDown(window, { key: "A" });
 
@@ -757,7 +778,7 @@ describe("word completion flow", () => {
     expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
     expect(document.activeElement).toBe(learningArea);
 
-    await user.click(screen.getByRole("button", { name: "Anterior" }));
+    await user.click(screen.getByRole("button", { name: "Palavra anterior" }));
     expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
     expect(document.activeElement).toBe(learningArea);
   });
@@ -841,9 +862,19 @@ describe("word completion flow", () => {
       expect(
         screen.getByLabelText(`Palavra alvo ${item.displayText}`),
       ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Próxima palavra" }),
-      ).toBeDisabled();
+      if (index < ptPTStarterPack.items.length - 1) {
+        expect(
+          screen.getByRole("button", {
+            name: "Palavra seguinte sem concluir esta",
+          }),
+        ).toBeEnabled();
+      } else {
+        expect(
+          screen.getByRole("button", {
+            name: "Palavra seguinte sem concluir esta",
+          }),
+        ).toBeDisabled();
+      }
 
       for (const key of item.targetSequence) {
         fireEvent.keyDown(window, {
@@ -907,15 +938,20 @@ describe("word completion flow", () => {
     expect(screen.getByText("Lição completa")).toBeInTheDocument();
   });
 
-  it("keeps next disabled until completion and allows moving back", async () => {
+  it("keeps the arrows in place and allows moving back", async () => {
     const user = userEvent.setup();
     const audioService = createFakeAudioService();
 
     renderApp(audioService);
 
     expect(
-      screen.getByRole("button", { name: "Próxima palavra" }),
+      screen.getByRole("button", { name: "Palavra anterior" }),
     ).toBeDisabled();
+    expect(
+      screen.getByRole("button", {
+        name: "Palavra seguinte sem concluir esta",
+      }),
+    ).toBeEnabled();
 
     for (const key of ["C", "A", "S", "A"]) {
       fireEvent.keyDown(window, { key });
@@ -936,9 +972,11 @@ describe("word completion flow", () => {
     expect(screen.getByLabelText("Lição atual")).not.toHaveClass(
       "lesson-stage--text-only",
     );
-    expect(screen.getByRole("button", { name: "Anterior" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Palavra anterior" }),
+    ).toBeEnabled();
 
-    await user.click(screen.getByRole("button", { name: "Anterior" }));
+    await user.click(screen.getByRole("button", { name: "Palavra anterior" }));
 
     expect(screen.getByLabelText("Palavra alvo CASA")).toBeInTheDocument();
     expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
