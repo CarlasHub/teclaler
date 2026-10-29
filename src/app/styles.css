@@ -936,6 +936,14 @@ button:focus-visible,
   color: #2f8b55;
 }
 
+.lesson-instruction {
+  margin: 0;
+  color: #294d83;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 800;
+  text-align: center;
+}
+
 .typing-boxes {
   display: flex;
   flex-wrap: wrap;
@@ -974,6 +982,33 @@ button:focus-visible,
   align-items: center;
   justify-content: center;
   gap: 16px;
+}
+
+.hear-word-button,
+.restart-word-button {
+  min-height: 56px;
+  padding: 12px 18px;
+  border: 2px solid #88b49a;
+  border-radius: 14px;
+  background: #eaf7ed;
+  color: #185236;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.hear-word-button:hover,
+.restart-word-button:hover {
+  background: #d9f0df;
+}
+
+.restart-word-button {
+  border-color: #c8d9f7;
+  background: #fff;
+  color: #294d83;
+}
+
+.restart-word-button:hover {
+  background: #eef6ff;
 }
 
 .audio-cue {
@@ -1179,6 +1214,19 @@ button:focus-visible,
   color: #1f57aa;
 }
 
+.lesson-nav__button--skip {
+  border-color: #d6e0ed;
+  background: #f8fbff;
+  color: #47617e;
+}
+
+.lesson-nav__button--primary:not(:disabled) {
+  border-color: #1f57aa;
+  background: #1f57aa;
+  color: #fff;
+  box-shadow: 0 6px 16px rgb(31 87 170 / 18%);
+}
+
 .lesson-nav__button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -1304,7 +1352,7 @@ button:focus-visible,
 
 @media (min-width: 921px) and (max-height: 800px) {
   .lesson-shell {
-    gap: 8px;
+    gap: 6px;
     padding-block: 8px;
   }
   .top-region {
@@ -1333,7 +1381,7 @@ button:focus-visible,
   }
   .lesson-stage {
     gap: 14px;
-    padding: 12px 18px;
+    padding: 8px 18px;
   }
   .meaning-visual {
     min-height: 140px;
@@ -1342,14 +1390,14 @@ button:focus-visible,
     width: min(100%, 180px);
   }
   .lesson-focus {
-    gap: 8px;
+    gap: 5px;
   }
   .target-word {
-    font-size: 4.5rem;
+    font-size: 3.9rem;
   }
   .syllables {
-    gap: 18px;
-    font-size: 2rem;
+    gap: 16px;
+    font-size: 1.7rem;
   }
   .syllables__item {
     border-bottom-width: 4px;
@@ -1358,8 +1406,8 @@ button:focus-visible,
     gap: 8px;
   }
   .typing-box {
-    width: 56px;
-    font-size: 2.5rem;
+    width: 50px;
+    font-size: 2.15rem;
   }
   .cue-row {
     gap: 8px;
@@ -1369,7 +1417,9 @@ button:focus-visible,
     padding: 6px 10px;
   }
   .replay-button,
-  .volume-control {
+  .volume-control,
+  .hear-word-button,
+  .restart-word-button {
     min-height: 44px;
     padding: 6px 12px;
   }
@@ -1439,6 +1489,11 @@ button:focus-visible,
   .lesson-nav__button {
     min-width: 0;
     padding-inline: 12px;
+  }
+
+  .lesson-nav__button--skip {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .keyboard {
@@ -1535,7 +1590,9 @@ button:focus-visible,
 
   .audio-cue,
   .replay-button,
-  .volume-control {
+  .volume-control,
+  .hear-word-button,
+  .restart-word-button {
     width: min(100%, 280px);
   }
 

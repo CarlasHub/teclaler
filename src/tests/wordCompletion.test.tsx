@@ -63,6 +63,48 @@ describe("word completion flow", () => {
     ).toBeDisabled();
   });
 
+  it("lets the learner hear and restart a word without losing stage progress", async () => {
+    const user = userEvent.setup();
+    const audioService = createFakeAudioService();
+    renderApp(audioService);
+
+    expect(
+      screen.getByText("Escreve a palavra, uma letra de cada vez."),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ouvir palavra" }));
+    expect(audioService.play).toHaveBeenCalledWith("pt-PT.word.casa", {
+      interrupt: true,
+      volume: 1,
+    });
+
+    fireEvent.keyDown(window, { key: "C" });
+    expect(screen.getByLabelText("Letra 1 de 4, C")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Recomeçar palavra" }));
+    expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
+    expect(screen.getByTestId("learning-input-area")).toHaveFocus();
+    expect(
+      screen.getByText("Neste dispositivo: 0 conclusões"),
+    ).toBeInTheDocument();
+  });
+
+  it("can try another word without marking an unfinished word complete", async () => {
+    const user = userEvent.setup();
+    renderApp(createFakeAudioService());
+    fireEvent.keyDown(window, { key: "C" });
+
+    await user.click(
+      screen.getByRole("button", { name: "Tentar outra palavra" }),
+    );
+    expect(screen.getByLabelText("Palavra alvo MALA")).toBeInTheDocument();
+    expect(screen.getByLabelText("Letra 1 de 4, vazia")).toBeInTheDocument();
+    expect(
+      screen.getByText("Neste dispositivo: 0 conclusões"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Próxima palavra" }),
+    ).toBeDisabled();
+  });
+
   it("renders MALA from curriculum data when selected", () => {
     renderApp(createFakeAudioService(), { initialItemId: MALA_ID });
 

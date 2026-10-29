@@ -38,7 +38,8 @@ npm audit
 ## Keyboard use
 
 - On the home screen, choose a language and start or resume a stage. Use the **Etapas** button to return there from a lesson.
-- Type the visible word with the physical keyboard or use the on-screen keys.
+- Use **Ouvir palavra** to hear the full word at any time. Type the visible word with the physical keyboard or use the on-screen keys.
+- Use **Recomeçar palavra** to clear your current attempt or **Tentar outra palavra** to move on without marking an unfinished word complete.
 - `Backspace` removes the last typed letter. `Enter` advances after a completed word.
 - `Tab` reaches every control. `Enter` or `Space` activates buttons; arrow keys operate native selectors and sound controls.
 - Settings keeps focus inside the dialog. `Escape` closes it and returns focus to the settings button.
