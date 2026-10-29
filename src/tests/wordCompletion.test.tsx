@@ -27,7 +27,7 @@ describe("word completion flow", () => {
     );
 
     expect(
-      screen.getByRole("heading", { name: "Lê. Escreve. Descobre." }),
+      screen.getByRole("heading", { name: "Vamos ler?" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Começar a aprender" }),

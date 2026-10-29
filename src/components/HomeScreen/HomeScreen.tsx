@@ -4,10 +4,8 @@ import type { LessonLocale } from "../../curriculum/types";
 export interface HomeStage {
   id: number;
   title: string;
-  description: string;
   total: number;
   completed: number;
-  examples: string[];
 }
 
 interface HomeScreenProps {
@@ -17,6 +15,50 @@ interface HomeScreenProps {
   resumeWord: string | null;
   onLocaleChange: (locale: LessonLocale) => void;
   onStartStage: (stage: number) => void;
+}
+
+function StageIcon({ stage }: { stage: number }) {
+  if (stage === 2) {
+    return (
+      <svg viewBox="0 0 64 64" fill="none" focusable="false" aria-hidden="true">
+        <rect x="5" y="15" width="25" height="33" rx="6" />
+        <rect x="34" y="15" width="25" height="33" rx="6" />
+        <text x="17.5" y="37" textAnchor="middle">
+          CA
+        </text>
+        <text x="46.5" y="37" textAnchor="middle">
+          SA
+        </text>
+      </svg>
+    );
+  }
+  if (stage === 3) {
+    return (
+      <svg viewBox="0 0 64 64" fill="none" focusable="false" aria-hidden="true">
+        <path d="M8 48h48" />
+        <text x="32" y="45" textAnchor="middle">
+          Á
+        </text>
+      </svg>
+    );
+  }
+  if (stage === 4) {
+    return (
+      <svg viewBox="0 0 64 64" fill="none" focusable="false" aria-hidden="true">
+        <path d="M32 16c-8-5-17-5-26-2v35c9-3 18-3 26 2 8-5 17-5 26-2V14c-9-3-18-3-26 2Z" />
+        <path d="M32 16v35M12 23c5-1 10-1 15 1M37 24c5-2 10-2 15-1M12 31c5-1 10-1 15 1M37 32c5-2 10-2 15-1" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 64 64" fill="none" focusable="false" aria-hidden="true">
+      <rect x="9" y="8" width="46" height="48" rx="8" />
+      <path d="M16 43h32" />
+      <text x="32" y="39" textAnchor="middle">
+        A
+      </text>
+    </svg>
+  );
 }
 
 export function HomeScreen({
@@ -64,24 +106,27 @@ export function HomeScreen({
         </label>
       </header>
 
-      <section className="home-hero" aria-labelledby="home-title">
-        <div className="home-hero__copy">
-          <p className="home-eyebrow">
-            {english ? "READ · TYPE · LISTEN" : "LER · ESCREVER · OUVIR"}
-          </p>
-          <h1 id="home-title">
-            {english ? "Read. Type. Discover." : "Lê. Escreve. Descobre."}
-          </h1>
-          <p className="home-hero__intro">
+      <section className="home-welcome" aria-labelledby="home-title">
+        <div className="home-welcome__icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" focusable="false">
+            <path d="M32 16c-8-5-17-5-26-2v35c9-3 18-3 26 2 8-5 17-5 26-2V14c-9-3-18-3-26 2Z" />
+            <path d="M32 16v35M14 24l4 4 8-10M39 25h12M39 33h12" />
+          </svg>
+        </div>
+        <div className="home-welcome__copy">
+          <h1 id="home-title">{english ? "Let's read!" : "Vamos ler?"}</h1>
+          <p>
             {english
-              ? "See the word, type its letters and hear it come together. Take your time."
-              : "Vê a palavra, escreve as letras e ouve os sons a formar-se. Ao teu ritmo."}
+              ? "Choose a stage and type the words."
+              : "Escolhe uma etapa e escreve as palavras."}
           </p>
-          <button
-            className="home-hero__start"
-            onClick={() => onStartStage(currentStage.id)}
-            type="button"
-          >
+        </div>
+        <button
+          className="home-welcome__start"
+          onClick={() => onStartStage(currentStage.id)}
+          type="button"
+        >
+          <span>
             {resumeWord
               ? english
                 ? `Continue with ${resumeWord}`
@@ -89,40 +134,15 @@ export function HomeScreen({
               : english
                 ? "Start learning"
                 : "Começar a aprender"}
-            <span aria-hidden="true">→</span>
-          </button>
-          <p className="home-hero__hint">
-            {english
-              ? "Works with your keyboard or the on-screen keys."
-              : "Usa o teclado do computador ou as teclas no ecrã."}
-          </p>
-        </div>
-        <div className="home-hero__art" aria-hidden="true">
-          <span className="home-art__sun" />
-          <span className="home-art__tile home-art__tile--one">C</span>
-          <span className="home-art__tile home-art__tile--two">A</span>
-          <span className="home-art__tile home-art__tile--three">S</span>
-          <span className="home-art__tile home-art__tile--four">A</span>
-          <span className="home-art__underline" />
-        </div>
+          </span>
+          <span aria-hidden="true">→</span>
+        </button>
       </section>
 
       <section className="home-stages" aria-labelledby="home-stages-title">
-        <div className="home-stages__heading">
-          <div>
-            <p className="home-eyebrow">
-              {english ? "YOUR JOURNEY" : "O TEU PERCURSO"}
-            </p>
-            <h2 id="home-stages-title">
-              {english ? "Choose a stage" : "Escolhe uma etapa"}
-            </h2>
-          </div>
-          <p>
-            {english
-              ? "You can practise any stage."
-              : "Podes praticar qualquer etapa."}
-          </p>
-        </div>
+        <h2 id="home-stages-title">
+          {english ? "Choose a stage" : "Escolhe uma etapa"}
+        </h2>
         <div className="home-stages__grid">
           {stages.map((stage) => (
             <button
@@ -131,37 +151,27 @@ export function HomeScreen({
               onClick={() => onStartStage(stage.id)}
               type="button"
             >
-              <span className="visually-hidden">
-                {english ? "Stage" : "Etapa"} {stage.id}
+              <span className="home-stage-card__icon">
+                <StageIcon stage={stage.id} />
               </span>
-              <span className="home-stage-card__top">
-                <span className="home-stage-card__number" aria-hidden="true">
-                  {String(stage.id).padStart(2, "0")}
+              <span className="home-stage-card__body">
+                <span className="home-stage-card__step">
+                  {english ? "Stage" : "Etapa"} {stage.id}
                 </span>
-                <span className="home-stage-card__arrow" aria-hidden="true">
-                  ↗
-                </span>
-              </span>
-              <strong>{stage.title}</strong>
-              <span className="home-stage-card__description">
-                {stage.description}
-              </span>
-              <span className="home-stage-card__examples" aria-hidden="true">
-                {stage.examples.join(" · ")}
-              </span>
-              <span className="home-stage-card__progress">
-                <span>
+                <strong>{stage.title}</strong>
+                <span className="home-stage-card__count">
                   {english
-                    ? `${stage.completed}/${stage.total} words`
-                    : `${stage.completed}/${stage.total} palavras`}
+                    ? `${stage.completed} of ${stage.total} words`
+                    : `${stage.completed} de ${stage.total} palavras`}
                 </span>
-                <span className="home-stage-card__track" aria-hidden="true">
-                  <span
-                    style={{
-                      width: `${(stage.completed / stage.total) * 100}%`,
-                    }}
-                  />
-                </span>
+              </span>
+              <span className="home-stage-card__arrow" aria-hidden="true">
+                →
+              </span>
+              <span className="home-stage-card__track" aria-hidden="true">
+                <span
+                  style={{ width: `${(stage.completed / stage.total) * 100}%` }}
+                />
               </span>
             </button>
           ))}

@@ -443,7 +443,6 @@ export function App({
             completed: items.filter(
               (item) => (progressSnapshot.completedItems[item.id] ?? 0) > 0,
             ).length,
-            examples: items.slice(0, 3).map((item) => item.displayText),
           };
         })
       : [
@@ -451,17 +450,10 @@ export function App({
             id: 1,
             title:
               selectedLocale === "en-GB" ? "First words" : "Primeiras palavras",
-            description:
-              selectedLocale === "en-GB"
-                ? "Learn with pictures and sounds"
-                : "Aprende com imagens e sons",
             total: currentPack.items.length,
             completed: currentPack.items.filter(
               (item) => (progressSnapshot.completedItems[item.id] ?? 0) > 0,
             ).length,
-            examples: currentPack.items
-              .slice(0, 3)
-              .map((item) => item.displayText),
           },
         ];
   const completedWordCount = currentPack.items.filter(
