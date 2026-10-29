@@ -15,6 +15,7 @@ interface HomeScreenProps {
   resumeWord: string | null;
   onLocaleChange: (locale: LessonLocale) => void;
   onStartStage: (stage: number) => void;
+  onStartPhonics: (stage: number) => void;
 }
 
 function StageIcon({ stage }: { stage: number }) {
@@ -68,6 +69,7 @@ export function HomeScreen({
   resumeWord,
   onLocaleChange,
   onStartStage,
+  onStartPhonics,
 }: HomeScreenProps) {
   const homeRef = useRef<HTMLElement>(null);
   const english = locale === "en-GB";
@@ -121,22 +123,32 @@ export function HomeScreen({
               : "Escolhe uma etapa e escreve as palavras."}
           </p>
         </div>
-        <button
-          className="home-welcome__start"
-          onClick={() => onStartStage(currentStage.id)}
-          type="button"
-        >
-          <span>
-            {resumeWord
-              ? english
-                ? `Continue with ${resumeWord}`
-                : `Continuar em ${resumeWord}`
-              : english
-                ? "Start learning"
-                : "Começar a aprender"}
-          </span>
-          <span aria-hidden="true">→</span>
-        </button>
+        <div className="home-welcome__actions">
+          <button
+            className="home-welcome__start"
+            onClick={() => onStartStage(currentStage.id)}
+            type="button"
+          >
+            <span>
+              {resumeWord
+                ? english
+                  ? `Continue with ${resumeWord}`
+                  : `Continuar em ${resumeWord}`
+                : english
+                  ? "Start learning"
+                  : "Começar a aprender"}
+            </span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <button
+            className="home-welcome__phonics"
+            onClick={() => onStartPhonics(currentStage.id)}
+            type="button"
+          >
+            <span aria-hidden="true">♫</span>
+            {english ? "Practise sounds" : "Treinar sons"}
+          </button>
+        </div>
       </section>
 
       <section className="home-stages" aria-labelledby="home-stages-title">

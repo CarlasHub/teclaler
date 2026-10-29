@@ -12,6 +12,7 @@ import { audioManifestsByLocale } from "../audio/manifest";
 import { hasBrowserAudioOutputSupport } from "../audio/ttsFallback";
 import type { AudioService } from "../audio/types";
 import { LessonScreen } from "../components/LessonScreen";
+import { PhonicsScreen } from "../components/PhonicsScreen";
 import { HomeScreen, type HomeStage } from "../components/HomeScreen";
 import {
   curriculumPacksByLocale,
@@ -33,12 +34,14 @@ import {
   type ProgressStore,
 } from "../progress/progressStore";
 
+type AppView = "home" | "lesson" | "phonics";
+
 interface AppProps {
   audioService?: AudioService;
   initialItemId?: string;
   initialLocale?: LessonLocale;
   progressStore?: ProgressStore;
-  initialView?: "home" | "lesson";
+  initialView?: AppView;
 }
 
 type AudioLessonEvent = Extract<LessonEvent, { audioId?: string }>;
@@ -59,7 +62,7 @@ export function App({
   initialView,
 }: AppProps) {
   const learningInputRef = useRef<HTMLElement | null>(null);
-  const [view, setView] = useState<"home" | "lesson">(
+  const [view, setView] = useState<AppView>(
     () => initialView ?? (initialItemId ? "lesson" : "home"),
   );
   const [selectedLocale, setSelectedLocale] = useState<LessonLocale>(
@@ -220,8 +223,8 @@ export function App({
     [restoreLearningFocus, selectedLocale, setLessonState],
   );
 
-  const handleStartStage = useCallback(
-    (stage: number) => {
+  const openStage = useCallback(
+    (stage: number, nextView: "lesson" | "phonics") => {
       if (selectedLocale === "pt-PT") {
         handleStageChange(stage);
       } else {
@@ -234,9 +237,18 @@ export function App({
         setCurrentItemIndex(nextIndex);
         setLessonState(createLessonState(nextPack.items[nextIndex]));
       }
-      setView("lesson");
+      setView(nextView);
     },
     [handleStageChange, selectedLocale, setLessonState],
+  );
+
+  const handleStartStage = useCallback(
+    (stage: number) => openStage(stage, "lesson"),
+    [openStage],
+  );
+  const handleStartPhonics = useCallback(
+    (stage: number) => openStage(stage, "phonics"),
+    [openStage],
   );
 
   const handleLessonLocaleChange = useCallback(
@@ -398,6 +410,30 @@ export function App({
     }
   }, [audioVolume, currentItem, service]);
 
+  const handleHearPhonicsPart = useCallback(
+    (index: number) => {
+      const audioId = currentItem.audio.syllables?.[index];
+      if (!audioId) return;
+      audioQueueRef.current = service
+        .play(audioId, { interrupt: true, volume: audioVolume })
+        .catch(() => undefined);
+    },
+    [audioVolume, currentItem, service],
+  );
+
+  const handleBlendPhonics = useCallback(() => {
+    const audioIds = [
+      ...(currentItem.audio.syllables ?? []),
+      ...(currentItem.audio.word ? [currentItem.audio.word] : []),
+    ];
+    audioQueueRef.current = playInSequence(
+      service,
+      audioIds,
+      audioVolume,
+    ).catch(() => undefined);
+    return audioQueueRef.current;
+  }, [audioVolume, currentItem, service]);
+
   const handleRestartWord = useCallback(() => {
     setLessonState(createLessonState(currentItem));
     setAudioCue(null);
@@ -554,6 +590,35 @@ export function App({
         }
         onLocaleChange={handleLessonLocaleChange}
         onStartStage={handleStartStage}
+        onStartPhonics={handleStartPhonics}
+      />
+    );
+  }
+
+  if (view === "phonics") {
+    return (
+      <PhonicsScreen
+        key={currentItem.id}
+        item={currentItem}
+        position={{
+          current: currentItemIndex + 1,
+          total: currentPack.items.length,
+        }}
+        selectedStage={selectedStage}
+        stageOptions={selectedLocale === "pt-PT" ? ptPTStages : []}
+        canGoPrevious={canGoPrevious}
+        canGoNext={canGoNext}
+        onHome={() => setView("home")}
+        onStageChange={handleStageChange}
+        onPrevious={handlePreviousLesson}
+        onNext={handleSkipWord}
+        onHearWord={handleHearWord}
+        onHearPart={handleHearPhonicsPart}
+        onBlend={handleBlendPhonics}
+        onTypeWord={() => {
+          handleRestartWord();
+          setView("lesson");
+        }}
       />
     );
   }
@@ -597,6 +662,7 @@ export function App({
         }
         setView("home");
       }}
+      onOpenPhonics={() => setView("phonics")}
       onNextStage={
         selectedLocale === "pt-PT" && selectedStage < 4
           ? () => handleStartStage(selectedStage + 1)

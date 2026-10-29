@@ -10,41 +10,16 @@ letters → syllables → words → sentences
 
 Typing is not the goal by itself. Typing is the action that reinforces reading.
 
-## Portuguese sequence
+## Current Portuguese practice sequence
 
-### Stage 1: vowels
+1. Five picture-supported starter words: CASA, MALA, PATO, SAPO and BOLA.
+2. Twenty-five short words with simple syllables.
+3. Fourteen words with accents and nasal sounds.
+4. Twelve words with digraphs and consonant groups.
 
-```text
-a e i o u
-```
+The dedicated **Treinar sons** section uses the recorded syllables for each word. Children listen from left to right, hear the syllables joined with the whole word, see the letter groups, and can then type the same word. This follows the [March 2026 Year 1 Portuguese learning guidance](https://www.dge.mec.pt/sites/default/files/1_portugues.pdf), which includes segmenting words into syllables and phonemes and using phonological games before writing. The app's precise word order and recordings remain drafts for educator and speaker review.
 
-### Stage 2: simple CV syllables
-
-```text
-ma me mi mo mu
-pa pe pi po pu
-la le li lo lu
-sa se si so su
-ca co cu
-```
-
-### Stage 3: short words
-
-```text
-casa mala pato sapo bola lua mesa lata pipa mimo
-```
-
-### Stage 4: accents/nasal sounds
-
-```text
-mãe pão não avó avô café
-```
-
-### Stage 5: digraphs
-
-```text
-chave filho galinha carro massa
-```
+English starter words currently have a single recorded word part. The section lets children hear and rebuild each one, but does not claim to provide isolated English phoneme recordings. Separate reviewed sound assets would be needed for that extension.
 
 ## Curriculum item review
 

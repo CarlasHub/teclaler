@@ -37,6 +37,10 @@ test("physical keyboard completes a word and settings keep focus inside the dial
   ).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(
+    page.getByRole("button", { name: "Treinar os sons desta palavra" }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(
     page.getByRole("slider", { name: "Volume do som" }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
@@ -55,6 +59,7 @@ test("the home journey is operable with Tab and Enter", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: "Começar a aprender" }),
   ).toBeFocused();
+  await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   await expect(

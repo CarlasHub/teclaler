@@ -13,6 +13,7 @@ TeclaLer helps children practise reading and typing. A child sees a word, types 
 - British English draft audio uses the UK English Cori voice locally, including words, letters and feedback. The recordings remain marked for pronunciation review.
 - Physical and on-screen keyboard input; visible focus; keyboard-operable language, stage, sound and settings controls; local resume and progress.
 - A simple home screen lets a child resume the last word or choose a stage using a large icon and label. Each stage shows progress on this device. The layout adapts to iPad portrait, landscape and split windows.
+- A dedicated **Treinar sons / Phonics** section lets a child hear each recorded syllable in order, blend the whole word, see its letter groups, and then type that same word. It covers every word in the chosen language and opens from Home or the lesson settings.
 - A versioned offline web cache; the Windows app embeds the same lessons and audio locally.
 
 ## Run locally
@@ -36,6 +37,7 @@ npm audit
 ## Keyboard use
 
 - On the home screen, choose a language and start or resume a stage. Use the **Etapas** button to return there from a lesson.
+- Choose **Treinar sons** on Home to practise sound parts. The Phonics screen has its own stage selector and previous/next word arrows. Touch, `Tab`, `Enter` and `Space` operate its buttons.
 - Use **Ouvir palavra** to hear the full word at any time. Type the visible word with the physical keyboard or use the on-screen keys.
 - Use **Recomeçar palavra** to clear your current attempt. The arrows beside the word move to the previous or next word. Moving forward before finishing skips that word without marking it complete.
 - The on-screen keyboard stays visible while typing and after a word is complete. After the finished word is spoken, the next word appears automatically. The **Próxima palavra** action and arrows still allow immediate movement. At the end of a stage, the app offers the next stage or unfinished words.

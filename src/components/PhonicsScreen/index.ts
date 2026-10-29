@@ -1,0 +1,1 @@
+export { PhonicsScreen } from "./PhonicsScreen";

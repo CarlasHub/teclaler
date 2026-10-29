@@ -17,5 +17,6 @@
    Repeat with automatic advancement on and off; confirm that the new word is announced after the finished word audio, and that the setting can be reached and changed without losing the current word.
 4. Check 200% and 400% zoom, high contrast/forced colors, reduced motion and narrow windows. Keep the target word visible while typing with the on-screen keyboard.
 5. Ask an adult to supervise child testing. Observe whether children can understand the instructions and make progress without hints, whether audio timing is helpful, and whether corrections feel calm. Do not collect names, recordings or analytics. Record only anonymous observations and proposed fixes.
+   Include the **Treinar sons** section: can a child find it, hear each syllable in order, understand the blend action, and return to the same typing word? Check JAWS and NVDA announcements when its previous/next word arrows change the target.
 
 These are release gates. Completing the build and automated checks does **not** count as educator, screen-reader or child testing.
