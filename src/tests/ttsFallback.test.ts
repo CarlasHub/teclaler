@@ -60,19 +60,17 @@ describe("development TTS fallback", () => {
     expect(selectPreferredVoice(voices, "pt-BR", "Sandy")?.name).toBe("Sandy");
   });
 
-  it("uses an exact en-GB voice hint for English placeholder audio", () => {
+  it("uses an exact en-GB voice hint before the preferred UK fallback", () => {
     const voices = [
       createVoice("Joana", "pt-PT"),
       createVoice("Shelley", "en-GB"),
-      createVoice("Sandy", "en-GB"),
+      createVoice("Microsoft Hazel", "en-GB"),
     ];
 
     expect(selectPreferredVoice(voices, "en-GB", "Shelley")?.name).toBe(
       "Shelley",
     );
-    expect(selectPreferredVoice(voices, "en-GB", "Luciana")?.name).toBe(
-      "Shelley",
-    );
+    expect(selectPreferredVoice(voices, "en-GB", "Luciana")?.name).toBe("Microsoft Hazel");
   });
 
   it("speaks pt-BR text without cancelling slow-starting speech", async () => {

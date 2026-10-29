@@ -301,7 +301,7 @@ function createFeedbackAssets(locale: LessonLocale): AudioManifestAsset[] {
 
 function getVoiceHint(locale: LessonLocale): string {
   if (locale === "en-GB") {
-    return "Shelley";
+    return "Sonia";
   }
 
   return locale === "pt-BR" ? "Luciana" : "Joana";

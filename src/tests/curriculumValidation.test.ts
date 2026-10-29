@@ -202,7 +202,7 @@ describe("pt-PT starter curriculum", () => {
         (asset) =>
           asset.locale === "en-GB" &&
           asset.path.startsWith("/audio/en-GB/") &&
-          asset.voice === "Shelley",
+          asset.voice === "Sonia",
       ),
     ).toBe(true);
     expect(resolveAudioAsset(enGBAudioManifest, "en-GB.letter.h")?.text).toBe(
