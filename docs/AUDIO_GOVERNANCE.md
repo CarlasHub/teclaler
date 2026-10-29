@@ -40,12 +40,17 @@ feedback
 }
 ```
 
-## Playback priority
+## Playback order and interruption
 
-1. Word completion audio.
-2. Syllable completion audio.
-3. Letter/key audio.
-4. Feedback audio.
+1. Accepted letter/key audio.
+2. Newly completed syllable audio.
+3. Newly completed word audio.
+
+Rapid accepted input appends to the same queue and must not cut off an earlier
+lesson recording. Correction, replay, or navigation may stop the queue.
+Completion navigation remains locked until the final word recording finishes.
+Rejected-key feedback interrupts the current lesson queue so the child hears the
+correction immediately.
 
 ## Locale rule
 
@@ -59,4 +64,5 @@ Before release:
 - Every audio path exists.
 - Every audio item has correct locale.
 - Every release audio item is reviewed.
-- Word completion audio plays after final key.
+- Rapid input preserves letter, syllable, and word playback order.
+- Word completion audio finishes before next-word navigation is enabled.

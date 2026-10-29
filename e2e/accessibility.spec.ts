@@ -11,6 +11,9 @@ test("physical keyboard completes a word and settings keep focus inside the dial
 
   await page.keyboard.type("casa");
   await expect(page.getByText("Palavra completa")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Próxima palavra" }),
+  ).toBeEnabled({ timeout: 20_000 });
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Palavra alvo MALA")).toBeVisible();
   await expect(learningArea).toBeFocused();
@@ -146,6 +149,7 @@ test("completing a word exposes a focused next action on narrow screens", async 
       await page.getByRole("button", { name: `Tecla ${key}` }).click();
     }
     const next = page.getByRole("button", { name: "Próxima palavra" });
+    await expect(next).toBeEnabled({ timeout: 20_000 });
     await expect(next).toBeFocused();
     await expect(next).toBeInViewport();
     await expect(page.getByLabel("Palavra alvo CASA")).toBeInViewport();
@@ -192,18 +196,25 @@ test("a completed word advances by itself after audio and keeps the next control
 test("finishing the starter stage exposes the next stage action", async ({
   page,
 }) => {
+  test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.getByRole("button", { name: "Começar a aprender" }).click();
   for (const word of ["CASA", "MALA", "PATO", "SAPO", "BOLA"]) {
     await page.getByTestId("learning-input-area").focus();
     await page.keyboard.type(word);
-    if (word !== "BOLA") await page.keyboard.press("Enter");
+    if (word !== "BOLA") {
+      await expect(
+        page.getByRole("button", { name: "Próxima palavra" }),
+      ).toBeEnabled({ timeout: 20_000 });
+      await page.keyboard.press("Enter");
+    }
   }
   await expect(
     page.getByRole("heading", { name: "Etapa concluída!" }),
   ).toBeVisible();
   const nextStage = page.getByRole("button", { name: "Etapa seguinte" });
+  await expect(nextStage).toBeEnabled({ timeout: 20_000 });
   await expect(nextStage).toBeFocused();
   await expect(nextStage).toBeInViewport();
   await page.keyboard.press("Enter");
@@ -460,6 +471,7 @@ test("touch keys finish a word and keep the keyboard visible for the next word",
     await page.getByRole("button", { name: `Tecla ${letter}` }).tap();
   }
   const next = page.getByRole("button", { name: "Próxima palavra" });
+  await expect(next).toBeEnabled({ timeout: 20_000 });
   await expect(next).toBeFocused();
   await expect(next).toBeInViewport();
   await expect(page.getByRole("button", { name: "Tecla C" })).toBeDisabled();

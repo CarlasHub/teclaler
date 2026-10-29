@@ -112,6 +112,8 @@ export function App({
   );
   const lessonStateRef = useRef(lessonState);
   const audioQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const audioQueueActiveRef = useRef(false);
+  const audioQueueTokenRef = useRef(0);
   const [progressSnapshot, setProgressSnapshot] = useState<ProgressSnapshot>(
     () => progress.load(),
   );
@@ -124,6 +126,7 @@ export function App({
     loadAutoAdvanceEnabled,
   );
   const [autoAdvanceResetKey, setAutoAdvanceResetKey] = useState(0);
+  const [completionAudioLocked, setCompletionAudioLocked] = useState(false);
   const canGoPrevious = currentItemIndex > 0;
   const canGoNext = currentItemIndex < currentPack.items.length - 1;
   const replayTarget = getLessonReplayTarget(currentItem, lessonState);
@@ -137,29 +140,93 @@ export function App({
     setLessonStateValue(nextState);
   }, []);
 
+  const cancelQueuedAudio = useCallback(
+    (options: { stopCurrent?: boolean } = {}) => {
+      audioQueueTokenRef.current += 1;
+      audioQueueActiveRef.current = false;
+      audioQueueRef.current = Promise.resolve();
+      setCompletionAudioLocked(false);
+      if (options.stopCurrent !== false) {
+        service.stop?.();
+      }
+    },
+    [service],
+  );
+
+  const startStandalonePlayback = useCallback(
+    (
+      playback: () => Promise<void>,
+      lockCompletion = lessonStateRef.current.completed,
+    ): Promise<void> => {
+      cancelQueuedAudio();
+      const queueToken = audioQueueTokenRef.current;
+      audioQueueActiveRef.current = true;
+      if (lockCompletion) setCompletionAudioLocked(true);
+
+      const queuedPlayback = Promise.resolve()
+        .then(playback)
+        .catch(() => undefined);
+      audioQueueRef.current = queuedPlayback;
+      void queuedPlayback.then(() => {
+        if (
+          queueToken !== audioQueueTokenRef.current ||
+          audioQueueRef.current !== queuedPlayback
+        ) {
+          return;
+        }
+        audioQueueActiveRef.current = false;
+        if (lockCompletion) setCompletionAudioLocked(false);
+      });
+      return queuedPlayback;
+    },
+    [cancelQueuedAudio],
+  );
+
   const playAudioEvents = useCallback(
     (events: LessonEvent[]) => {
       const audioEvents = events.filter(hasAudioId);
       const cueEvent = audioEvents[audioEvents.length - 1];
+      const completesWord = events.some(
+        (event) => event.type === "WORD_COMPLETED",
+      );
 
       if (cueEvent?.audioId) {
         setAudioCue(resolveAudioText(currentManifest, cueEvent.audioId));
       }
 
-      const [firstAudioId, ...queuedAudioIds] = audioEvents.map(
-        (event) => event.audioId,
-      );
-      if (!firstAudioId) {
+      const audioIds = audioEvents.map((event) => event.audioId);
+      if (audioIds.length === 0) {
+        if (completesWord) setCompletionAudioLocked(false);
         return;
       }
 
-      const firstPlayback = service
-        .play(firstAudioId, { interrupt: true, volume: audioVolume })
-        .catch(() => undefined);
-      audioQueueRef.current = firstPlayback
-        .then(() => playInSequence(service, queuedAudioIds, audioVolume))
-        .catch(() => undefined);
-      void audioQueueRef.current;
+      if (completesWord) setCompletionAudioLocked(true);
+      const queueToken = audioQueueTokenRef.current;
+      const interruptFirstAudio = !audioQueueActiveRef.current;
+      const previousPlayback = audioQueueRef.current;
+      audioQueueActiveRef.current = true;
+      const playBatch = () =>
+        playAudioIdSequence(
+          service,
+          audioIds,
+          audioVolume,
+          interruptFirstAudio,
+          () => queueToken === audioQueueTokenRef.current,
+        );
+      const queuedPlayback = (
+        interruptFirstAudio ? playBatch() : previousPlayback.then(playBatch)
+      ).catch(() => undefined);
+      audioQueueRef.current = queuedPlayback;
+      void queuedPlayback.then(() => {
+        if (
+          queueToken !== audioQueueTokenRef.current ||
+          audioQueueRef.current !== queuedPlayback
+        ) {
+          return;
+        }
+        audioQueueActiveRef.current = false;
+        if (completesWord) setCompletionAudioLocked(false);
+      });
     },
     [audioVolume, currentManifest, service],
   );
@@ -177,6 +244,7 @@ export function App({
 
   const selectLesson = useCallback(
     (nextIndex: number) => {
+      cancelQueuedAudio();
       const nextItem = currentPack.items[nextIndex];
       saveLastItemId(selectedLocale, selectedStage, nextItem.id);
       setCurrentItemIndex(nextIndex);
@@ -189,6 +257,7 @@ export function App({
     },
     [
       currentPack,
+      cancelQueuedAudio,
       restoreLearningFocus,
       selectedLocale,
       selectedStage,
@@ -203,6 +272,7 @@ export function App({
         !ptPTStages.some((stage) => stage.id === nextStage)
       )
         return;
+      cancelQueuedAudio();
       savePreferredStage(nextStage);
       const nextPack = getStagePack("pt-PT", nextStage);
       const nextIndex = getInitialItemIndex(
@@ -219,11 +289,12 @@ export function App({
       setRejectedKey(null);
       restoreLearningFocus();
     },
-    [restoreLearningFocus, selectedLocale, setLessonState],
+    [cancelQueuedAudio, restoreLearningFocus, selectedLocale, setLessonState],
   );
 
   const openStage = useCallback(
     (stage: number, nextView: "lesson" | "phonics") => {
+      cancelQueuedAudio();
       if (selectedLocale === "pt-PT") {
         handleStageChange(stage);
       } else {
@@ -238,7 +309,7 @@ export function App({
       }
       setView(nextView);
     },
-    [handleStageChange, selectedLocale, setLessonState],
+    [cancelQueuedAudio, handleStageChange, selectedLocale, setLessonState],
   );
 
   const handleStartStage = useCallback(
@@ -256,6 +327,7 @@ export function App({
         return;
       }
 
+      cancelQueuedAudio();
       const nextStage = nextLocale === "pt-PT" ? loadPreferredStage() : 1;
       const nextPack = getStagePack(nextLocale, nextStage);
       const nextIndex = getInitialItemIndex(
@@ -274,11 +346,15 @@ export function App({
       setPressedKey(null);
       setRejectedKey(null);
     },
-    [selectedLocale, setLessonState],
+    [cancelQueuedAudio, selectedLocale, setLessonState],
   );
 
   const handleNextLesson = useCallback(() => {
-    if (canGoNext && lessonStateRef.current.completed) {
+    if (
+      canGoNext &&
+      lessonStateRef.current.completed &&
+      !audioQueueActiveRef.current
+    ) {
       selectLesson(currentItemIndex + 1);
     } else {
       restoreLearningFocus();
@@ -294,13 +370,14 @@ export function App({
   }, [canGoPrevious, currentItemIndex, restoreLearningFocus, selectLesson]);
 
   const handleBackspace = useCallback(() => {
+    cancelQueuedAudio();
     const update = processLessonBackspace(currentItem, lessonStateRef.current);
     setLessonState(update.state);
     setFeedbackMessage(null);
     setAudioCue(null);
     setPressedKey("backspace");
     setRejectedKey(null);
-  }, [currentItem, setLessonState]);
+  }, [cancelQueuedAudio, currentItem, setLessonState]);
 
   const handleCanonicalInput = useCallback(
     (key: string) => {
@@ -325,6 +402,7 @@ export function App({
           (event) => event.type === "KEY_REJECTED",
         );
         if (rejectedEvent?.type === "KEY_REJECTED") {
+          cancelQueuedAudio({ stopCurrent: false });
           const message = getWrongKeyFeedback(
             currentItem.locale,
             rejectedEvent.expected,
@@ -354,6 +432,7 @@ export function App({
       currentItem,
       handleBackspace,
       audioVolume,
+      cancelQueuedAudio,
       playAudioEvents,
       progress,
       service,
@@ -373,19 +452,22 @@ export function App({
     }
 
     if (target.audioId) {
-      audioQueueRef.current = service
-        .play(target.audioId, { interrupt: true, volume: audioVolume })
-        .catch(() => undefined);
+      void startStandalonePlayback(() =>
+        service.play(target.audioId!, {
+          interrupt: true,
+          volume: audioVolume,
+        }),
+      );
       return;
     }
 
-    audioQueueRef.current = service
-      .speak(
+    void startStandalonePlayback(() =>
+      service.speak(
         { text: target.text, locale: currentItem.locale },
         { interrupt: true, volume: audioVolume },
-      )
-      .catch(() => undefined);
-  }, [audioVolume, currentItem, service]);
+      ),
+    );
+  }, [audioVolume, currentItem, service, startStandalonePlayback]);
 
   const handleHearWord = useCallback(() => {
     setAudioCue(currentItem.displayText);
@@ -393,31 +475,32 @@ export function App({
       setAutoAdvanceResetKey((key) => key + 1);
     }
     if (currentItem.audio.word) {
-      audioQueueRef.current = service
-        .play(currentItem.audio.word, {
+      void startStandalonePlayback(() =>
+        service.play(currentItem.audio.word!, {
           interrupt: true,
           volume: audioVolume,
-        })
-        .catch(() => undefined);
+        }),
+      );
     } else {
-      audioQueueRef.current = service
-        .speak(
+      void startStandalonePlayback(() =>
+        service.speak(
           { text: currentItem.text, locale: currentItem.locale },
           { interrupt: true, volume: audioVolume },
-        )
-        .catch(() => undefined);
+        ),
+      );
     }
-  }, [audioVolume, currentItem, service]);
+  }, [audioVolume, currentItem, service, startStandalonePlayback]);
 
   const handleHearPhonicsPart = useCallback(
     (index: number) => {
       const audioId = currentItem.audio.syllables?.[index];
       if (!audioId) return;
-      audioQueueRef.current = service
-        .play(audioId, { interrupt: true, volume: audioVolume })
-        .catch(() => undefined);
+      void startStandalonePlayback(
+        () => service.play(audioId, { interrupt: true, volume: audioVolume }),
+        false,
+      );
     },
-    [audioVolume, currentItem, service],
+    [audioVolume, currentItem, service, startStandalonePlayback],
   );
 
   const handleBlendPhonics = useCallback(() => {
@@ -425,22 +508,21 @@ export function App({
       ...(currentItem.audio.syllables ?? []),
       ...(currentItem.audio.word ? [currentItem.audio.word] : []),
     ];
-    audioQueueRef.current = playInSequence(
-      service,
-      audioIds,
-      audioVolume,
-    ).catch(() => undefined);
-    return audioQueueRef.current;
-  }, [audioVolume, currentItem, service]);
+    return startStandalonePlayback(
+      () => playAudioIdSequence(service, audioIds, audioVolume, true),
+      false,
+    );
+  }, [audioVolume, currentItem, service, startStandalonePlayback]);
 
   const handleRestartWord = useCallback(() => {
+    cancelQueuedAudio();
     setLessonState(createLessonState(currentItem));
     setAudioCue(null);
     setFeedbackMessage(null);
     setPressedKey(null);
     setRejectedKey(null);
     restoreLearningFocus();
-  }, [currentItem, restoreLearningFocus, setLessonState]);
+  }, [cancelQueuedAudio, currentItem, restoreLearningFocus, setLessonState]);
 
   const handleSkipWord = useCallback(() => {
     if (canGoNext) selectLesson(currentItemIndex + 1);
@@ -518,7 +600,8 @@ export function App({
       if (
         event.key === "Enter" &&
         lessonStateRef.current.completed &&
-        canGoNext
+        canGoNext &&
+        !audioQueueActiveRef.current
       ) {
         event.preventDefault();
         handleNextLesson();
@@ -608,7 +691,10 @@ export function App({
         stageOptions={selectedLocale === "pt-PT" ? ptPTStages : []}
         canGoPrevious={canGoPrevious}
         canGoNext={canGoNext}
-        onHome={() => setView("home")}
+        onHome={() => {
+          cancelQueuedAudio();
+          setView("home");
+        }}
         onStageChange={handleStageChange}
         onPrevious={handlePreviousLesson}
         onNext={handleSkipWord}
@@ -627,6 +713,7 @@ export function App({
     <LessonScreen
       audioCue={audioCue}
       audioUnavailable={audioUnavailable}
+      completionAudioPlaying={completionAudioLocked}
       hasNextWord={canGoNext}
       canGoPrevious={canGoPrevious}
       feedbackMessage={feedbackMessage}
@@ -660,9 +747,13 @@ export function App({
         if (lessonState.completed && firstUnfinishedIndex >= 0) {
           selectLesson(firstUnfinishedIndex);
         }
+        cancelQueuedAudio();
         setView("home");
       }}
-      onOpenPhonics={() => setView("phonics")}
+      onOpenPhonics={() => {
+        cancelQueuedAudio();
+        setView("phonics");
+      }}
       onNextStage={
         selectedLocale === "pt-PT" && selectedStage < 4
           ? () => handleStartStage(selectedStage + 1)
@@ -670,7 +761,10 @@ export function App({
       }
       onReviewUnfinished={() => {
         if (firstUnfinishedIndex >= 0) selectLesson(firstUnfinishedIndex);
-        else setView("home");
+        else {
+          cancelQueuedAudio();
+          setView("home");
+        }
       }}
       pressedKey={pressedKey}
       lessonLocale={selectedLocale}
@@ -765,13 +859,23 @@ function hasAudioId(
   );
 }
 
-async function playInSequence(
+async function playAudioIdSequence(
   audioService: AudioService,
   audioIds: string[],
   volume: number,
+  interruptFirstAudio: boolean,
+  isCurrent: () => boolean = () => true,
 ): Promise<void> {
   for (const [index, audioId] of audioIds.entries()) {
-    await audioService.play(audioId, { interrupt: index === 0, volume });
+    if (!isCurrent()) return;
+    try {
+      await audioService.play(audioId, {
+        interrupt: interruptFirstAudio && index === 0,
+        volume,
+      });
+    } catch {
+      if (!isCurrent()) return;
+    }
   }
 }
 

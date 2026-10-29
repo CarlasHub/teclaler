@@ -55,7 +55,7 @@ export async function speakWithDevelopmentTts(
   }
 
   if (options.interrupt) {
-    cancelActiveSpeech();
+    cancelDevelopmentTts();
   }
 
   const locale = asset.locale ?? "pt-PT";
@@ -182,7 +182,12 @@ function hasLocalAudioElementSupport(): boolean {
   return typeof audio.play === "function";
 }
 
-function cancelActiveSpeech(): void {
+export function cancelDevelopmentTts(): void {
+  if (!hasSpeechSynthesisSupport()) {
+    activeUtterances.clear();
+    return;
+  }
+
   window.speechSynthesis.cancel();
   activeUtterances.clear();
 }
