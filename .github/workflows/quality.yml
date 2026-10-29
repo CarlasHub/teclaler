@@ -27,7 +27,7 @@ jobs:
         with:
           name: qa-report
           path: |
-            .qa/report.json
+            .qa
             test-results
             playwright-report
           if-no-files-found: ignore

@@ -1,6 +1,6 @@
 # QA checks
 
-Run `npm run qa` in the repository. The runner prints one short PASS or FAIL line per check, saves `.qa/report.json`, and exits with a failure code if any check fails. In GitHub Actions it adds a summary table and a failure annotation. The report artifact keeps the JSON report and Playwright failure details.
+Run `npm run qa` in the repository. The runner prints one short PASS or FAIL line per check, saves `.qa/report.json`, and exits with a failure code if any check fails. In GitHub Actions it adds a summary table and a failure annotation. The report artifact keeps the JSON report, the full log of each failed check and Playwright failure details.
 
 | Check | What it catches |
 | --- | --- |

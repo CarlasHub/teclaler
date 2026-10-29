@@ -8,6 +8,7 @@ interface QaResult {
   status: "pass" | "fail" | "skip";
   seconds: number;
   detail?: string;
+  log?: string;
 }
 
 const onWindows = process.platform === "win32";
@@ -28,6 +29,8 @@ const checks = [
   },
 ] as const;
 const results: QaResult[] = [];
+const qaDirectory = join(process.cwd(), ".qa");
+await mkdir(qaDirectory, { recursive: true });
 
 for (const check of checks) {
   if (
@@ -53,9 +56,14 @@ for (const check of checks) {
   const status = code === 0 ? "pass" : "fail";
   const detail =
     status === "fail"
-      ? output.trim().split(/\r?\n/u).slice(-24).join("\n")
+      ? output.trim().split(/\r?\n/u).slice(-80).join("\n")
       : undefined;
-  results.push({ name: check.name, status, seconds, detail });
+  const log =
+    status === "fail"
+      ? `.qa/${check.name.toLowerCase().replace(/[^a-z0-9]+/gu, "-")}.log`
+      : undefined;
+  if (log) await writeFile(join(process.cwd(), log), output);
+  results.push({ name: check.name, status, seconds, detail, log });
   console.log(`QA: ${status.toUpperCase()} ${check.name} (${seconds}s)`);
   if (detail) console.error(detail);
   if (status === "fail" && process.env.GITHUB_ACTIONS === "true") {
@@ -65,8 +73,6 @@ for (const check of checks) {
   }
 }
 
-const qaDirectory = join(process.cwd(), ".qa");
-await mkdir(qaDirectory, { recursive: true });
 await writeFile(
   join(qaDirectory, "report.json"),
   JSON.stringify(
@@ -98,6 +104,8 @@ const summary = [
     .flatMap((result) => [
       `### ${result.name} failed`,
       "",
+      `Full log: \`${result.log}\` in the QA artifact.`,
+      "",
       "```text",
       result.detail ?? "No failure output was captured.",
       "```",
@@ -117,11 +125,15 @@ async function runNpm(
   env: NodeJS.ProcessEnv,
 ): Promise<{ code: number; output: string }> {
   return new Promise((resolve) => {
-    const child = spawn(npmCommand, onWindows ? ["/d", "/s", "/c", "npm", ...args] : [...args], {
-      cwd: process.cwd(),
-      env,
-      windowsHide: true,
-    });
+    const child = spawn(
+      npmCommand,
+      onWindows ? ["/d", "/s", "/c", "npm", ...args] : [...args],
+      {
+        cwd: process.cwd(),
+        env,
+        windowsHide: true,
+      },
+    );
     let output = "";
     let resolved = false;
     const finish = (code: number) => {
