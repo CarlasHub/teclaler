@@ -304,7 +304,7 @@ function getVoiceHint(locale: LessonLocale): string {
     return "Cori";
   }
 
-  return locale === "pt-BR" ? "Luciana" : "Tugão";
+  return "Dii";
 }
 
 function getLetterAudioText(locale: LessonLocale, letter: string): string {

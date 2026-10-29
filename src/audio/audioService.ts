@@ -51,12 +51,13 @@ export function createBrowserAudioService(
       await reportIfUnavailable(
         playLocalAudio(asset.path, volume, (audio) => {
           currentAudio = audio;
-        }).catch(() =>
-          speakWithLocalSupportFallback(asset, {
+        }).catch((error: unknown) => {
+          if (isPlaybackInterruption(error)) throw error;
+          return speakWithLocalSupportFallback(asset, {
             interrupt: options.interrupt,
             volume,
-          }),
-        ),
+          });
+        }),
         serviceOptions,
       );
       return;
@@ -97,6 +98,10 @@ export function createBrowserAudioService(
   ): Promise<void> {
     const volume = normalizeVolume(options.volume);
     const locale = message.locale ?? manifest.locale;
+    if (options.interrupt) {
+      currentAudio?.pause();
+      currentAudio = null;
+    }
     const localSpeechAsset = resolveLocalSpeechAsset(
       manifest,
       message.text,
@@ -107,12 +112,13 @@ export function createBrowserAudioService(
       await reportIfUnavailable(
         playLocalAudio(localSpeechAsset.path, volume, (audio) => {
           currentAudio = audio;
-        }).catch(() =>
-          speakWithLocalSupportFallback(localSpeechAsset, {
+        }).catch((error: unknown) => {
+          if (isPlaybackInterruption(error)) throw error;
+          return speakWithLocalSupportFallback(localSpeechAsset, {
             interrupt: options.interrupt,
             volume,
-          }),
-        ),
+          });
+        }),
         serviceOptions,
       );
       return;
@@ -156,33 +162,45 @@ async function playLocalAudio(
     onAudioCreated(audio);
 
     let settled = false;
-    const finish = (success: boolean) => {
+    const finish = (outcome: "ended" | "error" | "interrupted") => {
       if (settled) {
         return;
       }
 
       settled = true;
-      if (success) {
+      if (outcome === "ended") {
         resolve(true);
+      } else if (outcome === "interrupted") {
+        reject(new DOMException("Audio interrupted", "AbortError"));
       } else {
         reject(new Error(`Audio playback failed for ${path}`));
       }
     };
 
-    audio.onended = () => finish(true);
-    audio.onerror = () => finish(false);
+    audio.onended = () => finish("ended");
+    audio.onerror = () => finish("error");
+    audio.onpause = () => finish("interrupted");
 
     try {
       const playback = audio.play();
       if (typeof playback?.catch === "function") {
-        void playback.catch(() => finish(false));
+        void playback.catch(() => finish("error"));
       } else {
-        finish(false);
+        finish("error");
       }
     } catch {
-      finish(false);
+      finish("error");
     }
   });
+}
+
+function isPlaybackInterruption(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "AbortError"
+  );
 }
 
 function hasLocalAudioElementSupport(): boolean {
