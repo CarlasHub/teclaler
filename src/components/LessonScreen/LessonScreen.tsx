@@ -416,6 +416,11 @@ export function LessonScreen({
                 </section>
 
                 <p className="settings-privacy-note">{copy.privacyNote}</p>
+                {lessonLocale !== "en-GB" ? (
+                  <p className="settings-privacy-note">
+                    Voz Dii © TigreGotico Lda · CC BY-NC-ND 4.0 · uso não comercial.
+                  </p>
+                ) : null}
                 <section
                   aria-labelledby="settings-progress-title"
                   className="settings-section"
@@ -788,7 +793,7 @@ function getLessonCopy(locale: LessonLocale) {
       tagline: "Listen. Read. Type.",
       targetWordLabel: "Target word",
       variantPrefix: "Lesson language",
-      voiceUnavailable: "Voice unavailable in this browser.",
+      voiceUnavailable: "Sound is unavailable. Check the device volume and try again.",
       wordComplete: "Word complete",
       wordLabel: "Word",
       wordPosition: (current: number, total: number) =>
@@ -859,7 +864,7 @@ function getLessonCopy(locale: LessonLocale) {
     tagline: "Ouve. Lê. Escreve.",
     targetWordLabel: "Palavra alvo",
     variantPrefix: "Variante portuguesa",
-    voiceUnavailable: "Voz indisponível neste navegador.",
+    voiceUnavailable: "O som não está disponível. Verifica o volume e tenta outra vez.",
     wordComplete: "Palavra completa",
     wordLabel: "Palavra",
     wordPosition: (current: number, total: number) =>

@@ -90,8 +90,7 @@ export function App({
       audioService ??
       createBrowserAudioService(currentManifest, {
         onAudioAvailable: () => setAudioUnavailable(false),
-        onAudioUnavailable: () =>
-          setAudioUnavailable(!hasBrowserAudioOutputSupport()),
+        onAudioUnavailable: () => setAudioUnavailable(true),
       }),
     [audioService, currentManifest],
   );
@@ -599,6 +598,7 @@ export function App({
     return (
       <PhonicsScreen
         key={currentItem.id}
+        audioUnavailable={audioUnavailable}
         item={currentItem}
         position={{
           current: currentItemIndex + 1,

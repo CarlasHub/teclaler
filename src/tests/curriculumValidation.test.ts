@@ -210,8 +210,8 @@ describe("pt-PT starter curriculum", () => {
 
   it("uses one recorded voice per language in every audio asset", () => {
     for (const [manifest, locale, voice] of [
-      [ptPTAudioManifest, "pt-PT", "Tugão"],
-      [ptBRAudioManifest, "pt-BR", "Luciana"],
+      [ptPTAudioManifest, "pt-PT", "Dii"],
+      [ptBRAudioManifest, "pt-BR", "Dii"],
       [enGBAudioManifest, "en-GB", "Cori"],
     ] as const) {
       expect(
@@ -231,7 +231,7 @@ describe("pt-PT starter curriculum", () => {
         (asset) =>
           asset.locale === "pt-BR" &&
           asset.path.startsWith("/audio/pt-BR/") &&
-          asset.voice === "Luciana",
+          asset.voice === "Dii",
       ),
     ).toBe(true);
   });

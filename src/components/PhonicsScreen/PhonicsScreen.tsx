@@ -10,6 +10,7 @@ import { resolvePublicAssetPath } from "../../platform/publicPath";
 
 interface PhonicsScreenProps {
   item: CurriculumItem;
+  audioUnavailable: boolean;
   position: { current: number; total: number };
   selectedStage: number;
   stageOptions: readonly { id: number; title: string }[];
@@ -27,6 +28,7 @@ interface PhonicsScreenProps {
 
 export function PhonicsScreen({
   item,
+  audioUnavailable,
   position,
   selectedStage,
   stageOptions,
@@ -97,6 +99,11 @@ export function PhonicsScreen({
           <p className="phonics-eyebrow">{copy.sectionName}</p>
           <h1 id="phonics-title">{copy.title}</h1>
           <p>{copy.intro}</p>
+          {audioUnavailable ? (
+            <p className="audio-unavailable" role="status">
+              {copy.voiceUnavailable}
+            </p>
+          ) : null}
         </div>
         {stageOptions.length > 0 ? (
           <label className="phonics-stage-select">
@@ -278,6 +285,7 @@ function getPhonicsCopy(locale: LessonLocale) {
       typeWord: "Type this word",
       typeAfterBlend: "Now type this word",
       letterGroups: "Letters and groups",
+      voiceUnavailable: "Sound is unavailable. Check this device's audio output.",
     };
   }
   return {
@@ -313,5 +321,6 @@ function getPhonicsCopy(locale: LessonLocale) {
     typeWord: "Escrever esta palavra",
     typeAfterBlend: "Agora escreve esta palavra",
     letterGroups: "Letras e grupos",
+    voiceUnavailable: "O som não está disponível. Verifica a saída de áudio deste dispositivo.",
   };
 }
