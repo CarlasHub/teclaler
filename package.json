@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build && tsx scripts/finalizeServiceWorker.ts",
+    "build": "tsc -b && vite build && tsx scripts/inlineAppAssets.ts && tsx scripts/finalizeServiceWorker.ts",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:watch": "vitest",
