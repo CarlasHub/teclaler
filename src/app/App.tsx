@@ -464,6 +464,12 @@ export function App({
               .map((item) => item.displayText),
           },
         ];
+  const completedWordCount = currentPack.items.filter(
+    (item) => (progressSnapshot.completedItems[item.id] ?? 0) > 0,
+  ).length;
+  const firstUnfinishedIndex = currentPack.items.findIndex(
+    (item) => (progressSnapshot.completedItems[item.id] ?? 0) === 0,
+  );
 
   if (view === "home") {
     return (
@@ -501,11 +507,7 @@ export function App({
       selectedStage={selectedStage}
       stageOptions={selectedLocale === "pt-PT" ? ptPTStages : []}
       onStageChange={handleStageChange}
-      completedWordCount={
-        currentPack.items.filter(
-          (item) => (progressSnapshot.completedItems[item.id] ?? 0) > 0,
-        ).length
-      }
+      completedWordCount={completedWordCount}
       localCompletionCount={
         progressSnapshot.completedItems[currentItem.id] ?? 0
       }
@@ -518,12 +520,21 @@ export function App({
       onHearWord={handleHearWord}
       onRestartWord={handleRestartWord}
       onSkipWord={handleSkipWord}
-      onHome={() => setView("home")}
+      onHome={() => {
+        if (lessonState.completed && firstUnfinishedIndex >= 0) {
+          selectLesson(firstUnfinishedIndex);
+        }
+        setView("home");
+      }}
       onNextStage={
         selectedLocale === "pt-PT" && selectedStage < 4
           ? () => handleStartStage(selectedStage + 1)
           : undefined
       }
+      onReviewUnfinished={() => {
+        if (firstUnfinishedIndex >= 0) selectLesson(firstUnfinishedIndex);
+        else setView("home");
+      }}
       pressedKey={pressedKey}
       lessonLocale={selectedLocale}
       replayDisabled={replayTarget.disabled}
