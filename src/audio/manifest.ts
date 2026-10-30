@@ -304,7 +304,9 @@ function getVoiceHint(locale: LessonLocale): string {
     return "Cori";
   }
 
-  return "Dii";
+  return locale === "pt-PT"
+    ? "Qwen3-TTS synthetic pt-PT literacy voice"
+    : "Qwen3-TTS synthetic pt-BR literacy voice";
 }
 
 function getLetterAudioText(locale: LessonLocale, letter: string): string {

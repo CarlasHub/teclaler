@@ -210,8 +210,8 @@ describe("pt-PT starter curriculum", () => {
 
   it("uses one recorded voice per language in every audio asset", () => {
     for (const [manifest, locale, voice] of [
-      [ptPTAudioManifest, "pt-PT", "Dii"],
-      [ptBRAudioManifest, "pt-BR", "Dii"],
+      [ptPTAudioManifest, "pt-PT", "Qwen3-TTS synthetic pt-PT literacy voice"],
+      [ptBRAudioManifest, "pt-BR", "Qwen3-TTS synthetic pt-BR literacy voice"],
       [enGBAudioManifest, "en-GB", "Cori"],
     ] as const) {
       expect(
@@ -225,13 +225,13 @@ describe("pt-PT starter curriculum", () => {
     }
   });
 
-  it("keeps pt-BR placeholder audio on Brazilian Portuguese voice assets", () => {
+  it("keeps pt-BR audio on the Brazilian Portuguese regional voice", () => {
     expect(
       ptBRAudioManifest.assets.every(
         (asset) =>
           asset.locale === "pt-BR" &&
           asset.path.startsWith("/audio/pt-BR/") &&
-          asset.voice === "Dii",
+          asset.voice === "Qwen3-TTS synthetic pt-BR literacy voice",
       ),
     ).toBe(true);
   });

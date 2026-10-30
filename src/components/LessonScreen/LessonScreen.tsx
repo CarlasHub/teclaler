@@ -420,8 +420,8 @@ export function LessonScreen({
                 <p className="settings-privacy-note">{copy.privacyNote}</p>
                 {lessonLocale !== "en-GB" ? (
                   <p className="settings-privacy-note">
-                    Voz Dii © TigreGotico Lda · CC BY-NC-ND 4.0 · uso não
-                    comercial.
+                    Voz portuguesa sintética gerada localmente com Qwen3-TTS ·
+                    Apache-2.0.
                   </p>
                 ) : null}
                 <section

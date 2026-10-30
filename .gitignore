@@ -8,3 +8,5 @@ coverage/
 playwright-report/
 test-results/
 .qa/
+__pycache__/
+*.py[cod]
