@@ -33,8 +33,8 @@ for (const locale of locales) {
       );
       const peakDbfs = toDbfs(peak);
       const rmsDbfs = toDbfs(rms);
-      const maximumDuration =
-        asset.kind === "feedback" ? 7 : asset.kind === "letter" ? 3.5 : 6;
+      const maximumDuration = getMaximumDuration(asset.kind);
+      const minimumDuration = getMinimumDuration(asset.kind, asset.text);
 
       if (wav.channels !== 1) errors.push(`${asset.id}: expected mono audio`);
       if (wav.sampleRate !== 24_000 && locale !== "en-GB") {
@@ -43,7 +43,7 @@ for (const locale of locales) {
       if (wav.bitsPerSample !== 16) {
         errors.push(`${asset.id}: expected PCM16 audio`);
       }
-      if (duration < 0.2 || duration > maximumDuration) {
+      if (duration < minimumDuration || duration > maximumDuration) {
         errors.push(`${asset.id}: suspicious ${duration.toFixed(2)}s duration`);
       }
       if (peakDbfs > -1 || peakDbfs < -18) {
@@ -65,6 +65,29 @@ if (errors.length > 0) {
   throw new Error(`Audio audit failed:\n${errors.join("\n")}`);
 }
 console.log(`Audio audit passed for ${audited} manifest WAV files.`);
+
+function getMinimumDuration(kind: string, text: string): number {
+  const letterCount = [...text].filter((character) =>
+    /\p{L}/u.test(character),
+  ).length;
+  if (kind === "letter") return 0.45;
+  if (kind === "feedback") return 1;
+  if (kind === "word")
+    return Math.max(0.5, Math.min(1.8, 0.2 + letterCount * 0.08));
+  if (kind === "partial")
+    return Math.max(0.45, Math.min(1.8, 0.18 + letterCount * 0.075));
+  // Open syllables can be naturally shorter than named letters; the previous
+  // rushed clips were around 0.25s, so this still catches that failure mode.
+  return 0.38;
+}
+
+function getMaximumDuration(kind: string): number {
+  if (kind === "feedback") return 5;
+  if (kind === "letter") return 2;
+  if (kind === "word") return 2.5;
+  if (kind === "partial") return 2;
+  return 1.2;
+}
 
 function parsePcmWav(buffer: Buffer): {
   bitsPerSample: number;

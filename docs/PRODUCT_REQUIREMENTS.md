@@ -48,7 +48,9 @@ The app shall read the accepted key/letter/sound in Portuguese.
 
 ### FR-006 Syllable audio
 
-The app shall read completed syllables when configured.
+The app shall read completed syllables in phonics activities or manual replay
+when configured. The typing lesson shall not insert syllable audio into the
+accepted-letter → completed-word sequence.
 
 ### FR-007 Completed word audio
 

@@ -184,7 +184,11 @@ export function App({
 
   const playAudioEvents = useCallback(
     (events: LessonEvent[]) => {
-      const audioEvents = events.filter(hasAudioId);
+      const audioEvents = events.filter(
+        (event): event is AudioLessonEvent & { audioId: string } =>
+          hasAudioId(event) &&
+          (event.type === "KEY_ACCEPTED" || event.type === "WORD_COMPLETED"),
+      );
       const cueEvent = audioEvents[audioEvents.length - 1];
       const completesWord = events.some(
         (event) => event.type === "WORD_COMPLETED",

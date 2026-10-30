@@ -42,9 +42,12 @@ feedback
 
 ## Playback order and interruption
 
-1. Accepted letter/key audio.
-2. Newly completed syllable audio.
-3. Newly completed word audio.
+1. Accepted letter/key audio, once.
+2. Newly completed word audio, once, after its final letter.
+
+Completed-syllable events remain available to phonics activities and manual
+replay, but the typing lesson does not insert them between the final letter and
+the whole word.
 
 Rapid accepted input appends to the same queue and must not cut off an earlier
 lesson recording. Correction, replay, or navigation may stop the queue.

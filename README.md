@@ -1,6 +1,10 @@
 # TeclaLer
 
-TeclaLer helps children practise reading and typing. A child sees a word, types each letter on a physical or on-screen keyboard, and hears letters, syllables and the completed word. The interface has no accounts, advertising, tracking, microphone access or external links in the lesson.
+TeclaLer helps children practise reading and typing. A child sees a word,
+types each letter on a physical or on-screen keyboard, hears each accepted
+letter once, and then hears the completed word once. Syllables are available
+in sound practice and manual replay. The interface has no accounts,
+advertising, tracking, microphone access or external links in the lesson.
 
 **Web app:** https://carlashub.github.io/teclaler/
 
@@ -34,7 +38,13 @@ npm audit
 
 `qa` checks unit behaviour, curriculum/audio, the Pages build, browser accessibility and touch layouts, and offline use. It writes a short pass/fail report to `.qa/report.json`. It uses the installed Edge browser on Windows; pull requests and Pages deployment also test WebKit. See [QA checks](docs/QA.md) for the scope and limits. `validate:content -- --release` intentionally fails until all child-facing audio is reviewed and approved in the manifest.
 
-Portuguese audio is generated locally with the free Apache-2.0 Qwen3-TTS models and synthetic regional reference voices; it does not clone a real speaker. Install `scripts/requirements-audio.txt`, set `QWEN_TTS_PYTHON` to that Python environment, then run `npm run audio:generate-pt-pt` or `npm run audio:generate-pt-br`.
+Portuguese audio is generated locally with the free Apache-2.0 Qwen3-TTS
+models and synthetic regional reference voices; it does not clone a real
+speaker. Install `scripts/requirements-audio.txt`, set `QWEN_TTS_PYTHON` to
+that Python environment, then run `npm run audio:generate-pt-pt` or
+`npm run audio:generate-pt-br`. The generator uses a natural teaching pace,
+preserves a short settling pause, and rejects clipped or rushed output. Regional
+reference voices can be reproduced with `scripts/generatePortugueseReference.py`.
 
 ## Keyboard use
 
