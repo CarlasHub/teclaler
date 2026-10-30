@@ -21,6 +21,7 @@ TARGET_RMS_DBFS = -22.0
 PEAK_LIMIT_DBFS = -1.5
 BATCH_SIZE = 8
 MAX_CROP_ATTEMPTS = 4
+READING_PROMPT = "Lê o último item uma vez, num ritmo natural e com clareza."
 REFERENCE_CONFIG = {
     "pt-PT": {
         "file": "qwen-pt-PT.wav",
@@ -70,6 +71,43 @@ def estimate_target_duration(text: str) -> float:
     return max(0.35, min(4.0, 0.30 + character_count * 0.05 + len(words) * 0.10))
 
 
+def minimum_clip_duration(asset: dict[str, object]) -> float:
+    """Reject clipped or rushed utterances before they enter the lesson library."""
+    kind = str(asset["kind"])
+    text = str(asset["text"])
+    letter_count = len(re.findall(r"[^\W\d_]", text, flags=re.UNICODE))
+    if kind == "letter":
+        return 0.45
+    if kind == "feedback":
+        return 1.0
+    if kind == "word":
+        return max(0.5, min(1.8, 0.20 + letter_count * 0.08))
+    if kind == "partial":
+        return max(0.45, min(1.8, 0.18 + letter_count * 0.075))
+    # A naturally spoken open syllable can be shorter than a named letter.
+    # Keep the floor above the previously rushed ~0.25s clips without forcing
+    # the model to stretch short syllables unnaturally.
+    return 0.38
+
+
+def maximum_clip_duration(asset: dict[str, object]) -> float:
+    """Reject carrier-phrase leakage and unnaturally stretched utterances."""
+    kind = str(asset["kind"])
+    if kind == "feedback":
+        return 5.0
+    if kind == "letter":
+        return 2.0
+    if kind == "word":
+        return 2.5
+    if kind == "partial":
+        return 2.0
+    return 1.2
+
+
+def synthesis_text(asset: dict[str, object]) -> str:
+    return f"{READING_PROMPT}\n\n{asset['text']}"
+
+
 def extract_target_audio(
     waveform: np.ndarray, sample_rate: int, target_text: str
 ) -> np.ndarray:
@@ -97,7 +135,7 @@ def extract_target_audio(
     if run_start is not None:
         runs.append((run_start, frame_count))
 
-    minimum_separator_frames = math.ceil(0.04 / 0.02)
+    minimum_separator_frames = math.ceil(0.08 / 0.02)
     separators = [
         run
         for run in runs
@@ -111,22 +149,16 @@ def extract_target_audio(
     active_frames = np.flatnonzero(~silent)
     final_speech_frame = int(active_frames[-1]) if active_frames.size else frame_count
     expected_duration = estimate_target_duration(target_text)
-    target_words = re.findall(r"[^\W\d_]+", target_text, flags=re.UNICODE)
-    if len(target_words) == 1:
-        # A single token has no inter-word gap, so its boundary is the last
-        # quiet run. This handles exceptionally short pauses before syllables.
-        _, separator_end = separators[-1]
-    else:
-        # Pick the pause whose remaining speech best matches the target's
-        # expected reading time. This rejects earlier pauses inside the stable
-        # prompt and later word gaps inside multi-word feedback.
-        _, separator_end = min(
-            separators,
-            key=lambda run: abs(
-                (final_speech_frame - run[1]) * frame_size / sample_rate
-                - expected_duration
-            ),
-        )
+    # Pick the pause whose remaining speech best matches the target's expected
+    # reading time. This rejects pauses within the carrier phrase and quiet
+    # consonants inside a short target word.
+    _, separator_end = min(
+        separators,
+        key=lambda run: abs(
+            (final_speech_frame - run[1]) * frame_size / sample_rate
+            - expected_duration
+        ),
+    )
     lead_in = int(sample_rate * 0.06)
     start = max(0, separator_end * frame_size - lead_in)
     return audio[start:]
@@ -146,8 +178,8 @@ def normalize_audio(waveform: np.ndarray, sample_rate: int) -> np.ndarray:
     active = np.flatnonzero(np.abs(audio) >= threshold)
     if not active.size:
         raise RuntimeError("The model returned no audible speech.")
-    head = int(sample_rate * 0.04)
-    tail = int(sample_rate * 0.10)
+    head = int(sample_rate * 0.06)
+    tail = int(sample_rate * 0.18)
     start = max(0, int(active[0]) - head)
     end = min(audio.size, int(active[-1]) + tail + 1)
     audio = audio[start:end]
@@ -177,19 +209,19 @@ def main() -> None:
 
     for batch_start in range(0, len(assets), BATCH_SIZE):
         batch = assets[batch_start : batch_start + BATCH_SIZE]
-        texts = [f"Vamos ler com atenção.\n\n{asset['text']}" for asset in batch]
+        texts = [synthesis_text(asset) for asset in batch]
         torch.manual_seed(int(batch[0]["seed"]))
         waveforms, sample_rate = model.generate_voice_clone(
             text=texts,
             language=["Portuguese"] * len(texts),
             voice_clone_prompt=prompt,
             top_k=20,
-            top_p=0.9,
-            temperature=0.7,
+            top_p=0.85,
+            temperature=0.6,
             repetition_penalty=1.1,
             subtalker_top_k=20,
-            subtalker_top_p=0.9,
-            subtalker_temperature=0.7,
+            subtalker_top_p=0.85,
+            subtalker_temperature=0.6,
             max_new_tokens=384,
         )
         if sample_rate != TARGET_SAMPLE_RATE:
@@ -207,28 +239,42 @@ def main() -> None:
                         waveform, sample_rate, asset["text"]
                     )
                     audio = normalize_audio(target_audio, sample_rate)
+                    duration = audio.size / sample_rate
+                    required_duration = minimum_clip_duration(asset)
+                    maximum_duration = maximum_clip_duration(asset)
+                    if duration < required_duration:
+                        raise RuntimeError(
+                            f"rushed or clipped {duration:.2f}s utterance "
+                            f"(minimum {required_duration:.2f}s)"
+                        )
+                    if duration > maximum_duration:
+                        raise RuntimeError(
+                            f"stretched or contaminated {duration:.2f}s utterance "
+                            f"(maximum {maximum_duration:.2f}s)"
+                        )
                     break
                 except RuntimeError as error:
                     last_error = error
                     if attempt == MAX_CROP_ATTEMPTS - 1:
                         raise RuntimeError(f"{asset['id']}: {error}") from error
                     print(
-                        f"Retrying {asset['id']} after an unsafe target boundary "
+                        f"Retrying {asset['id']} after audio validation failed: "
+                        f"{error} "
                         f"({attempt + 2}/{MAX_CROP_ATTEMPTS}).",
                         flush=True,
                     )
                     torch.manual_seed(int(asset["seed"]) + attempt + 1)
                     retry_waveforms, retry_sample_rate = model.generate_voice_clone(
-                        text=[f"Vamos ler com atenção.\n\n{asset['text']}"],
+                        text=[synthesis_text(asset)],
                         language=["Portuguese"],
                         voice_clone_prompt=prompt,
                         top_k=20,
-                        top_p=0.9,
-                        temperature=0.7,
+                        top_p=0.85,
+                        temperature=0.6,
                         repetition_penalty=1.1,
                         subtalker_top_k=20,
-                        subtalker_top_p=0.9,
-                        subtalker_temperature=0.7,
+                        subtalker_top_p=0.85,
+                        subtalker_temperature=0.6,
                         max_new_tokens=384,
                     )
                     if retry_sample_rate != TARGET_SAMPLE_RATE or len(retry_waveforms) != 1:

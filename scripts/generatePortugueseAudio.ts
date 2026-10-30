@@ -32,6 +32,10 @@ const requestedAssetIds = new Set(
     .filter((value) => value.startsWith("--asset="))
     .map((value) => value.slice("--asset=".length)),
 );
+const seedOffsets: Partial<Record<string, number>> = {
+  // The base deterministic seed omits the target and reads the carrier phrase.
+  "pt-PT.syllable.fo": 1,
+};
 const manifest = audioManifestsByLocale[locale];
 const pending: GenerationAsset[] = [];
 
@@ -50,7 +54,7 @@ for (const asset of manifest.assets) {
     id: asset.id,
     kind: asset.kind,
     outputFile,
-    seed: stableSeed(asset.id),
+    seed: stableSeed(asset.id) + (seedOffsets[asset.id] ?? 0),
     text: getSynthesisText(locale, asset),
   });
 }

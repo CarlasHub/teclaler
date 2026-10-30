@@ -92,10 +92,12 @@ interface AudioService {
 
 Production uses audio files. Development may use Web Speech API fallback.
 
-The app queues semantic audio events across rapid accepted input so a letter,
-newly completed syllable, and newly completed word are heard in lesson order.
-Correction, replay, or navigation may cancel that queue. Completion navigation
-stays disabled until the final queued word recording finishes.
+The typing lesson queues semantic audio events across rapid accepted input so
+each accepted letter is heard once, followed by the completed word once.
+Syllable events remain available to phonics activities and manual replay but
+are not inserted into that typing sequence. Correction, replay, or navigation
+may cancel the queue. Completion navigation stays disabled until the final
+queued word recording finishes.
 
 ## Lesson locales and Portuguese variants
 

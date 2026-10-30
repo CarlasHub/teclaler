@@ -213,10 +213,8 @@ describe("word completion flow", () => {
     const expectedAudio = [
       "pt-PT.letter.c",
       "pt-PT.letter.a",
-      "pt-PT.syllable.ca",
       "pt-PT.letter.s",
       "pt-PT.letter.a",
-      "pt-PT.syllable.sa",
       "pt-PT.word.casa",
     ];
 
@@ -236,7 +234,9 @@ describe("word completion flow", () => {
 
     expect(
       audioService.playOptions.map((options) => options.interrupt),
-    ).toEqual([true, false, false, false, false, false, false]);
+    ).toEqual([true, false, false, false, false]);
+    expect(audioService.played).not.toContain("pt-PT.syllable.ca");
+    expect(audioService.played).not.toContain("pt-PT.syllable.sa");
 
     await resolveNextAudio(audioService);
 
@@ -788,8 +788,9 @@ describe("word completion flow", () => {
 
     fireEvent.keyDown(window, { key: "A" });
     await waitFor(() =>
-      expect(audioService.played).toContain("pt-PT.syllable.ca"),
+      expect(audioService.played).toContain("pt-PT.letter.a"),
     );
+    expect(audioService.played).not.toContain("pt-PT.syllable.ca");
     expect(replayButton).toHaveAccessibleDescription("Vai ouvir CA.");
 
     const syllableReplayCount = audioService.played.filter(
@@ -886,8 +887,9 @@ describe("word completion flow", () => {
     fireEvent.keyDown(window, { key: "a" });
     expect(screen.getByLabelText("Letra 2 de 4, A")).toBeInTheDocument();
     await waitFor(() =>
-      expect(audioService.played).toContain("pt-PT.syllable.ca"),
+      expect(audioService.played).toContain("pt-PT.letter.a"),
     );
+    expect(audioService.played).not.toContain("pt-PT.syllable.ca");
 
     const replayButton = screen.getByRole("button", {
       name: "Ouvir outra vez",
