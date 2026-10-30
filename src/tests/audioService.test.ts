@@ -13,7 +13,7 @@ const manifest: AudioManifest = {
       kind: "word",
       text: "casa",
       path: "/audio/pt-PT/words/casa.wav",
-      voice: "Dii",
+      voice: "Synthetic test voice",
       reviewStatus: "needs_review",
     },
     {
@@ -22,7 +22,7 @@ const manifest: AudioManifest = {
       kind: "word",
       text: "mala",
       path: "/audio/pt-PT/words/mala.wav",
-      voice: "Dii",
+      voice: "Synthetic test voice",
       reviewStatus: "needs_review",
     },
   ],

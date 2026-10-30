@@ -10,7 +10,7 @@ TeclaLer helps children practise reading and typing. A child sees a word, types 
 
 - European Portuguese: 56 original words across four stages, each with a local illustration and description, from starter words to short words, accents and digraphs. The 51 added practice words and their locally generated pt-PT recordings are drafts requiring educator and pronunciation review before a child pilot. Illustration credits are in [Word illustrations](public/images/WORD_ILLUSTRATIONS.md).
 - Brazilian Portuguese and British English: separate five-word starter lessons with their own audio IDs.
-- Each language uses one local draft recording voice for words, sound parts, letters and feedback: female Dii (Portugal and Brazil) and female Cori (UK). The recordings remain marked for pronunciation review.
+- Each language uses one controlled local recording voice for words, sound parts, letters and feedback: separate synthetic Qwen3-TTS literacy voices for European and Brazilian Portuguese, and female Cori for UK English. The recordings remain marked for native-speaker pronunciation review.
 - Physical and on-screen keyboard input; visible focus; keyboard-operable language, stage, sound and settings controls; local resume and progress.
 - A simple home screen lets a child resume the last word or choose a stage using a large icon and label. Each stage shows progress on this device. The layout adapts to iPad portrait, landscape and split windows.
 - A dedicated **Treinar sons / Phonics** section lets a child hear each recorded syllable in order, blend the whole word, see its letter groups, and then type that same word. It covers every word in the chosen language and opens from Home or the lesson settings.
@@ -33,6 +33,8 @@ npm audit
 ```
 
 `qa` checks unit behaviour, curriculum/audio, the Pages build, browser accessibility and touch layouts, and offline use. It writes a short pass/fail report to `.qa/report.json`. It uses the installed Edge browser on Windows; pull requests and Pages deployment also test WebKit. See [QA checks](docs/QA.md) for the scope and limits. `validate:content -- --release` intentionally fails until all child-facing audio is reviewed and approved in the manifest.
+
+Portuguese audio is generated locally with the free Apache-2.0 Qwen3-TTS models and synthetic regional reference voices; it does not clone a real speaker. Install `scripts/requirements-audio.txt`, set `QWEN_TTS_PYTHON` to that Python environment, then run `npm run audio:generate-pt-pt` or `npm run audio:generate-pt-br`.
 
 ## Keyboard use
 
